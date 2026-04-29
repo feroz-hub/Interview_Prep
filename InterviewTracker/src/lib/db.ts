@@ -13,10 +13,18 @@ const IDB_STORE = "sqlite";
 const IDB_KEY = "main";
 const SCHEMA_VERSION = 1;
 
+// Dev-server endpoints provided by vite-plugin-db-sync. When the dev server is
+// running, the real .db file on disk (data/interview-tracker.db) is the source
+// of truth. In production builds these endpoints don't exist and the app falls
+// back to IndexedDB only.
+const DISK_LOAD_URL = "/__db/load";
+const DISK_SAVE_URL = "/__db/save";
+
 let SQL: SqlJsStatic | null = null;
 let _db: Database | null = null;
 let saveTimer: number | null = null;
 let initPromise: Promise<Database> | null = null;
+let diskSyncEnabled = false;
 
 // ---------- IndexedDB helpers ----------
 function openIDB(): Promise<IDBDatabase> {
@@ -57,6 +65,41 @@ async function deleteBinary(): Promise<void> {
     tx.objectStore(IDB_STORE).delete(IDB_KEY);
     tx.oncomplete = () => resolve();
   });
+}
+
+// ---------- Disk-file sync (dev only) ----------
+async function loadFromDisk(): Promise<Uint8Array | null> {
+  try {
+    const res = await fetch(DISK_LOAD_URL, { cache: "no-store" });
+    if (res.status === 404) {
+      // Endpoint exists but no file yet — disk sync is available, just empty.
+      diskSyncEnabled = true;
+      return null;
+    }
+    if (!res.ok) return null;
+    diskSyncEnabled = true;
+    const buf = await res.arrayBuffer();
+    return buf.byteLength > 0 ? new Uint8Array(buf) : null;
+  } catch {
+    // No dev server (production build, or server down) — silently disable.
+    return null;
+  }
+}
+
+async function saveToDisk(data: Uint8Array): Promise<void> {
+  if (!diskSyncEnabled) return;
+  try {
+    // Copy into a fresh ArrayBuffer so fetch gets a clean BodyInit.
+    const buf = new ArrayBuffer(data.byteLength);
+    new Uint8Array(buf).set(data);
+    await fetch(DISK_SAVE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-sqlite3" },
+      body: buf,
+    });
+  } catch (e) {
+    console.warn("Disk sync failed:", e);
+  }
 }
 
 // ---------- Schema + seed ----------
@@ -173,10 +216,13 @@ export async function initDb(): Promise<Database> {
   initPromise = (async () => {
     if (!SQL) SQL = await initSqlJs({ locateFile: () => wasmUrl });
 
-    const existing = await loadBinary();
+    // Disk file (dev) wins over IndexedDB so the on-disk .db is the source of
+    // truth across browsers / incognito / cleared storage.
+    const fromDisk = await loadFromDisk();
+    const existing = fromDisk ?? (await loadBinary());
+
     if (existing && existing.byteLength > 0) {
       _db = new SQL.Database(existing);
-      // Make sure schema is up to date even on existing DB
       createSchema(_db);
       seedQuestions(_db);
     } else {
@@ -184,8 +230,8 @@ export async function initDb(): Promise<Database> {
       createSchema(_db);
       seedQuestions(_db);
       migrateLocalStorage(_db);
-      await persistNow();
     }
+    await persistNow();
     return _db;
   })();
 
@@ -201,6 +247,7 @@ async function persistNow(): Promise<void> {
   if (!_db) return;
   const data = _db.export();
   await saveBinary(data);
+  await saveToDisk(data);
 }
 
 export function persistDebounced(delay = 350): void {
