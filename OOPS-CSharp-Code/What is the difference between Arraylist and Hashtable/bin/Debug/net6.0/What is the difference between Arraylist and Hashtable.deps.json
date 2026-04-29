@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "What is the difference between Arraylist and Hashtable/1.0.0": {
+        "runtime": {
+          "What is the difference between Arraylist and Hashtable.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "What is the difference between Arraylist and Hashtable/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

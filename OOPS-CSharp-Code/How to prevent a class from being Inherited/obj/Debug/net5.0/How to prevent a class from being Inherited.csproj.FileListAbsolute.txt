@@ -1,0 +1,16 @@
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\How to prevent a class from being Inherited.exe
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\How to prevent a class from being Inherited.deps.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\How to prevent a class from being Inherited.runtimeconfig.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\How to prevent a class from being Inherited.runtimeconfig.dev.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\How to prevent a class from being Inherited.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\ref\How to prevent a class from being Inherited.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\bin\Debug\net5.0\How to prevent a class from being Inherited.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.csproj.AssemblyReference.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.GeneratedMSBuildEditorConfig.editorconfig
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.AssemblyInfoInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.AssemblyInfo.cs
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.csproj.CoreCompileInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\ref\How to prevent a class from being Inherited.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\How to prevent a class from being Inherited\obj\Debug\net5.0\How to prevent a class from being Inherited.genruntimeconfig.cache

@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>What_are_Extension_Methods_When_to_use_them</RootNamespace>
+  </PropertyGroup>
+
+</Project>

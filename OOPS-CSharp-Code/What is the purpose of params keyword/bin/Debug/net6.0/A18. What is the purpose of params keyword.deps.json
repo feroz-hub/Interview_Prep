@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "A18. What is the purpose of params keyword/1.0.0": {
+        "runtime": {
+          "A18. What is the purpose of params keyword.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "A18. What is the purpose of params keyword/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,15 @@
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\bin\Debug\net6.0\LSP.exe
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\bin\Debug\net6.0\LSP.deps.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\bin\Debug\net6.0\LSP.runtimeconfig.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\bin\Debug\net6.0\LSP.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\bin\Debug\net6.0\LSP.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.csproj.AssemblyReference.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.AssemblyInfoInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.AssemblyInfo.cs
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\refint\LSP.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\LSP.genruntimeconfig.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\SOLID\SOLID\LSP\obj\Debug\net6.0\ref\LSP.dll

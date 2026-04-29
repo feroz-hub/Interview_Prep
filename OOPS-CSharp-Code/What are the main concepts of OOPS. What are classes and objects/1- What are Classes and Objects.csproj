@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>What_are_the_main_concepts_of_OOPS._What_are_classes_and_objects_</RootNamespace>
+  </PropertyGroup>
+
+</Project>

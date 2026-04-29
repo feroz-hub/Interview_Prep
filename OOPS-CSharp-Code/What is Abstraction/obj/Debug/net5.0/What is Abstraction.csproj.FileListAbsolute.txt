@@ -1,0 +1,16 @@
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\What is Abstraction.exe
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\What is Abstraction.deps.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\What is Abstraction.runtimeconfig.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\What is Abstraction.runtimeconfig.dev.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\What is Abstraction.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\ref\What is Abstraction.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\bin\Debug\net5.0\What is Abstraction.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.csproj.AssemblyReference.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.GeneratedMSBuildEditorConfig.editorconfig
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.AssemblyInfoInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.AssemblyInfo.cs
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.csproj.CoreCompileInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\ref\What is Abstraction.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Abstraction\obj\Debug\net5.0\What is Abstraction.genruntimeconfig.cache

@@ -1,0 +1,10 @@
+is_global = true
+build_property.TargetFramework = net5.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.PublishSingleFile = 
+build_property.IncludeAllContentForSelfExtract = 
+build_property._SupportedPlatformList = Android,iOS,Linux,macOS,Windows
+build_property.RootNamespace = What_are_the_main_concepts_of_OOPS._What_are_classes_and_objects_
+build_property.ProjectDir = D:\_InterviewHappy-9.0\Code\InterviewHappy\What are the main concepts of OOPS. What are classes and objects\

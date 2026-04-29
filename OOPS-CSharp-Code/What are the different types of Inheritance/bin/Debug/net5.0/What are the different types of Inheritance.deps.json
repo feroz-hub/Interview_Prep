@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "What are the different types of Inheritance/1.0.0": {
+        "runtime": {
+          "What are the different types of Inheritance.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "What are the different types of Inheritance/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

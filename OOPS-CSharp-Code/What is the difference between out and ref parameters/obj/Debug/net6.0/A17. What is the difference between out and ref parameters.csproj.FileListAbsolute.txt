@@ -1,0 +1,15 @@
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\bin\Debug\net6.0\A17. What is the difference between out and ref parameters.exe
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\bin\Debug\net6.0\A17. What is the difference between out and ref parameters.deps.json
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\bin\Debug\net6.0\A17. What is the difference between out and ref parameters.runtimeconfig.json
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\bin\Debug\net6.0\A17. What is the difference between out and ref parameters.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\bin\Debug\net6.0\A17. What is the difference between out and ref parameters.pdb
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.csproj.AssemblyReference.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.AssemblyInfoInputs.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.AssemblyInfo.cs
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\refint\A17. What is the difference between out and ref parameters.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.pdb
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\A17. What is the difference between out and ref parameters.genruntimeconfig.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between out and ref parameters\obj\Debug\net6.0\ref\A17. What is the difference between out and ref parameters.dll

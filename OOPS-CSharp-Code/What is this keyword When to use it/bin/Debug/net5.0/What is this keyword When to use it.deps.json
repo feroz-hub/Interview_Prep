@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "What is this keyword When to use it/1.0.0": {
+        "runtime": {
+          "What is this keyword When to use it.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "What is this keyword When to use it/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,15 @@
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\bin\Debug\net6.0\ThreadTask.exe
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\bin\Debug\net6.0\ThreadTask.deps.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\bin\Debug\net6.0\ThreadTask.runtimeconfig.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\bin\Debug\net6.0\ThreadTask.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\bin\Debug\net6.0\ThreadTask.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.csproj.AssemblyReference.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.AssemblyInfoInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.AssemblyInfo.cs
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\refint\ThreadTask.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ThreadTask.genruntimeconfig.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\ThreadTask\obj\Debug\net6.0\ref\ThreadTask.dll

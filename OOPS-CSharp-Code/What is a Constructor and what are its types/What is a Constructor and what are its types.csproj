@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>What_is_a_Constructor_and_what_are_its_types</RootNamespace>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "What are Access Specifiers What is the default access modifier in a class/1.0.0": {
+        "runtime": {
+          "What are Access Specifiers What is the default access modifier in a class.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "What are Access Specifiers What is the default access modifier in a class/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

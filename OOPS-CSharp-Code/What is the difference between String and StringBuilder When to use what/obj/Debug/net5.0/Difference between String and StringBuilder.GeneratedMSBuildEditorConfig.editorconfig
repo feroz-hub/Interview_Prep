@@ -1,0 +1,10 @@
+is_global = true
+build_property.TargetFramework = net5.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = What_is_the_difference_between_String_and_StringBuilder_When_to_use_what
+build_property.ProjectDir = D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the difference between String and StringBuilder When to use what\

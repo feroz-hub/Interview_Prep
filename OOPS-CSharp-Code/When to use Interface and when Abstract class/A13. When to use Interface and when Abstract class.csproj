@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>When_to_use_Interface_and_when_Abstract_class</RootNamespace>
+  </PropertyGroup>
+
+</Project>

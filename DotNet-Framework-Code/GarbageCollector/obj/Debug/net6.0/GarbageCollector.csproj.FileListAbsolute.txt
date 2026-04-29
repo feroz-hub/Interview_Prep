@@ -1,0 +1,15 @@
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\bin\Debug\net6.0\GarbageCollector.exe
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\bin\Debug\net6.0\GarbageCollector.deps.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\bin\Debug\net6.0\GarbageCollector.runtimeconfig.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\bin\Debug\net6.0\GarbageCollector.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\bin\Debug\net6.0\GarbageCollector.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.csproj.AssemblyReference.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.AssemblyInfoInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.AssemblyInfo.cs
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\refint\GarbageCollector.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\GarbageCollector.genruntimeconfig.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\GarbageCollector\obj\Debug\net6.0\ref\GarbageCollector.dll

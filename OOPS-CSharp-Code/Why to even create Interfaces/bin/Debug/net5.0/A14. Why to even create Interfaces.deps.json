@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "A14. Why to even create Interfaces/1.0.0": {
+        "runtime": {
+          "A14. Why to even create Interfaces.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "A14. Why to even create Interfaces/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

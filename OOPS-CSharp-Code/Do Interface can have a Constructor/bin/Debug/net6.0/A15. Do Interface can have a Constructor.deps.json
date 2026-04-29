@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "A15. Do Interface can have a Constructor/1.0.0": {
+        "runtime": {
+          "A15. Do Interface can have a Constructor.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "A15. Do Interface can have a Constructor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

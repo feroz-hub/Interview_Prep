@@ -1,0 +1,16 @@
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\What is Encapsulation.exe
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\What is Encapsulation.deps.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\What is Encapsulation.runtimeconfig.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\What is Encapsulation.runtimeconfig.dev.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\What is Encapsulation.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\ref\What is Encapsulation.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\bin\Debug\net5.0\What is Encapsulation.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.csproj.AssemblyReference.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.GeneratedMSBuildEditorConfig.editorconfig
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.AssemblyInfoInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.AssemblyInfo.cs
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.csproj.CoreCompileInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\ref\What is Encapsulation.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Encapsulation\obj\Debug\net5.0\What is Encapsulation.genruntimeconfig.cache

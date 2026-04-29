@@ -1,0 +1,15 @@
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\Why to even create Interfaces.exe
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\Why to even create Interfaces.deps.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\Why to even create Interfaces.runtimeconfig.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\Why to even create Interfaces.runtimeconfig.dev.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\Why to even create Interfaces.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\ref\Why to even create Interfaces.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\bin\Debug\net5.0\Why to even create Interfaces.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.GeneratedMSBuildEditorConfig.editorconfig
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.AssemblyInfoInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.AssemblyInfo.cs
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.csproj.CoreCompileInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\ref\Why to even create Interfaces.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\Why to even create Interfaces\obj\Debug\net5.0\Why to even create Interfaces.genruntimeconfig.cache

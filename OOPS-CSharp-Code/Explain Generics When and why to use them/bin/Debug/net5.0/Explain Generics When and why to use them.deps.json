@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "Explain Generics When and why to use them/1.0.0": {
+        "runtime": {
+          "Explain Generics When and why to use them.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Explain Generics When and why to use them/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

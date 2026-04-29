@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "What is Polymorphism and what are its types/1.0.0": {
+        "runtime": {
+          "What is Polymorphism and what are its types.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "What is Polymorphism and what are its types/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

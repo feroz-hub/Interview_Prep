@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "DOYo2Gokqy0PILNMvmrndBEYOqhS81+8QkW2DckiZGlX1PfiHlTR5SJ2x94ldBtm94hQOytLSiHSS2aCcUb7jg==",
+  "success": true,
+  "projectFilePath": "D:\\InterviewHappy_2023\\Top-150-DotNet-Interview-Questions\\2-DotNet\\DotNet-Framework\\Serialization\\Serialization.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\anaya\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,15 @@
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\bin\Debug\net6.0\Assembly-1.exe
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\bin\Debug\net6.0\Assembly-1.deps.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\bin\Debug\net6.0\Assembly-1.runtimeconfig.json
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\bin\Debug\net6.0\Assembly-1.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\bin\Debug\net6.0\Assembly-1.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.csproj.AssemblyReference.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.AssemblyInfoInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.AssemblyInfo.cs
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\refint\Assembly-1.dll
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.pdb
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\Assembly-1.genruntimeconfig.cache
+D:\InterviewHappy_2023\Top-150-DotNet-Interview-Questions\2-DotNet\DotNet-Framework\Assembly-1\obj\Debug\net6.0\ref\Assembly-1.dll

@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "2. What is Inheritance Why Inheritance is important/1.0.0": {
+        "runtime": {
+          "2. What is Inheritance Why Inheritance is important.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "2. What is Inheritance Why Inheritance is important/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

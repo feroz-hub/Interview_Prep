@@ -1,0 +1,66 @@
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.exe
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.deps.json
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.runtimeconfig.json
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.pdb
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\System.Data.SqlClient.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-arm64\native\sni.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-x64\native\sni.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-x86\native\sni.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.AssemblyReference.cache
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.AssemblyInfoInputs.cache
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.AssemblyInfo.cs
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.CoreCompileInputs.cache
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.CopyComplete
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\refint\What is the purpose of using keyword.dll
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.pdb
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.genruntimeconfig.cache
+D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\What is the purpose of using keyword\obj\Debug\net6.0\ref\What is the purpose of using keyword.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.exe
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.deps.json
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.runtimeconfig.json
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.pdb
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\System.Data.SqlClient.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-arm64\native\sni.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-x64\native\sni.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-x86\native\sni.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.AssemblyReference.cache
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.AssemblyInfoInputs.cache
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.AssemblyInfo.cs
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.CopyComplete
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\refint\What is the purpose of using keyword.dll
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.pdb
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.genruntimeconfig.cache
+D:\InterviewHappy_2022\InterviewHappy-Hindi\31-Oct-2022\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\ref\What is the purpose of using keyword.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.exe
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.deps.json
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.runtimeconfig.json
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\What is the purpose of using keyword.pdb
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\System.Data.SqlClient.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-arm64\native\sni.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-x64\native\sni.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win-x86\native\sni.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\bin\Debug\net6.0\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.AssemblyReference.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.GeneratedMSBuildEditorConfig.editorconfig
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.AssemblyInfoInputs.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.AssemblyInfo.cs
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.CoreCompileInputs.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.csproj.CopyComplete
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\refint\What is the purpose of using keyword.dll
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.pdb
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\What is the purpose of using keyword.genruntimeconfig.cache
+D:\InterviewHappy_2023\OOPS-CSharp-Code\What is the purpose of using keyword\obj\Debug\net6.0\ref\What is the purpose of using keyword.dll

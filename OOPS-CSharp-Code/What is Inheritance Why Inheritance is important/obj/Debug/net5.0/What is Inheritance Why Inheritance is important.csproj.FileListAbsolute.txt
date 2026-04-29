@@ -1,0 +1,16 @@
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\What is Inheritance Why Inheritance is important.exe
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\What is Inheritance Why Inheritance is important.deps.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\What is Inheritance Why Inheritance is important.runtimeconfig.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\What is Inheritance Why Inheritance is important.runtimeconfig.dev.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\What is Inheritance Why Inheritance is important.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\ref\What is Inheritance Why Inheritance is important.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\bin\Debug\net5.0\What is Inheritance Why Inheritance is important.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.csproj.AssemblyReference.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.GeneratedMSBuildEditorConfig.editorconfig
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.AssemblyInfoInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.AssemblyInfo.cs
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.csproj.CoreCompileInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\ref\What is Inheritance Why Inheritance is important.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is Inheritance Why Inheritance is important\obj\Debug\net5.0\What is Inheritance Why Inheritance is important.genruntimeconfig.cache

@@ -1,0 +1,15 @@
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\What is the difference between an Abstract class and an Interface.exe
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\What is the difference between an Abstract class and an Interface.deps.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\What is the difference between an Abstract class and an Interface.runtimeconfig.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\What is the difference between an Abstract class and an Interface.runtimeconfig.dev.json
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\What is the difference between an Abstract class and an Interface.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\ref\What is the difference between an Abstract class and an Interface.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\bin\Debug\net5.0\What is the difference between an Abstract class and an Interface.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.GeneratedMSBuildEditorConfig.editorconfig
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.AssemblyInfoInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.AssemblyInfo.cs
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.csproj.CoreCompileInputs.cache
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\ref\What is the difference between an Abstract class and an Interface.dll
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.pdb
+D:\_InterviewHappy-9.0\Code\InterviewHappy\What is the difference between an Abstract class and an Interface\obj\Debug\net5.0\What is the difference between an Abstract class and an Interface.genruntimeconfig.cache

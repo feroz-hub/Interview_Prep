@@ -1,0 +1,10 @@
+is_global = true
+build_property.TargetFramework = net5.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = Do_Interface_can_have_a_Constructor
+build_property.ProjectDir = D:\InterviewHappy\_InterviewHappy-Hindi\31-Oct-2022\OOP_CSharp_Code\Do Interface can have a Constructor\
