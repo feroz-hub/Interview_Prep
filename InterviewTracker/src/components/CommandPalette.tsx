@@ -1,13 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QUESTIONS } from "../data/questions";
+import type { Course, UdemyAccount } from "../types";
+
+export type PaletteSelection =
+  | { kind: "question"; id: number }
+  | { kind: "course"; id: number }
+  | { kind: "account"; email: string };
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSelect: (questionId: number) => void;
+  onSelect: (sel: PaletteSelection) => void;
+  courses?: Course[];
+  accounts?: UdemyAccount[];
 }
 
-export default function CommandPalette({ open, onClose, onSelect }: Props) {
+interface Item {
+  key: string;
+  kind: "question" | "course" | "account";
+  id: number;       // 0 for account
+  email?: string;
+  primary: string;
+  secondary: string;
+  searchHaystack: string;
+  iconPrefix: string;
+}
+
+export default function CommandPalette({ open, onClose, onSelect, courses = [], accounts = [] }: Props) {
   const [q, setQ] = useState("");
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -21,25 +40,68 @@ export default function CommandPalette({ open, onClose, onSelect }: Props) {
     }
   }, [open]);
 
-  const results = useMemo(() => {
-    if (!q.trim()) return QUESTIONS.slice(0, 30);
+  const corpus = useMemo<Item[]>(() => {
+    const out: Item[] = [];
+    // Account filter actions
+    for (const a of accounts) {
+      out.push({
+        key: `account-${a.email}`,
+        kind: "account",
+        id: 0,
+        email: a.email,
+        primary: `Filter courses to ${a.displayName ?? a.email.split("@")[0]}`,
+        secondary: `Account · ${a.email}`,
+        searchHaystack: (`account ${a.email} ${a.displayName ?? ""} filter`).toLowerCase(),
+        iconPrefix: "📧",
+      });
+    }
+    for (const c of courses) {
+      out.push({
+        key: `course-${c.id}`,
+        kind: "course",
+        id: c.id,
+        primary: c.title,
+        secondary: `Course · ${c.stream} · ${c.progressPct}%${c.accountEmail ? ` · ${c.accountEmail}` : ""}`,
+        searchHaystack: (c.title + " " + c.stream + " course " + (c.accountEmail ?? "")).toLowerCase(),
+        iconPrefix: "🎓",
+      });
+    }
+    for (const item of QUESTIONS) {
+      out.push({
+        key: `q-${item.id}`,
+        kind: "question",
+        id: item.id,
+        primary: item.question,
+        secondary: `${item.topic} · #${item.id}`,
+        searchHaystack: (item.question + " " + item.topic).toLowerCase(),
+        iconPrefix: "❓",
+      });
+    }
+    return out;
+  }, [courses, accounts]);
+
+  const results = useMemo<Item[]>(() => {
+    if (!q.trim()) return corpus.slice(0, 30);
     const needle = q.toLowerCase();
     const tokens = needle.split(/\s+/).filter(Boolean);
-    const scored: { item: typeof QUESTIONS[0]; score: number }[] = [];
-    for (const item of QUESTIONS) {
-      const hay = (item.question + " " + item.topic).toLowerCase();
+    const scored: { item: Item; score: number }[] = [];
+    for (const item of corpus) {
       let score = 0;
       let allMatch = true;
       for (const t of tokens) {
-        const i = hay.indexOf(t);
+        const i = item.searchHaystack.indexOf(t);
         if (i < 0) { allMatch = false; break; }
         score += t.length / (i + 1);
       }
-      if (allMatch) scored.push({ item, score });
+      if (allMatch) {
+        if (item.kind === "account") score *= 1.5;
+        else if (item.kind === "course") score *= 1.2;
+        scored.push({ item, score });
+      }
     }
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, 50).map(s => s.item);
-  }, [q]);
+    return scored.slice(0, 50).map((s) => s.item);
+  }, [q, corpus]);
 
   useEffect(() => {
     if (!open) return;
@@ -50,14 +112,20 @@ export default function CommandPalette({ open, onClose, onSelect }: Props) {
       else if (e.key === "Enter") {
         e.preventDefault();
         const item = results[idx];
-        if (item) { onSelect(item.id); onClose(); }
+        if (item) {
+          if (item.kind === "account") {
+            onSelect({ kind: "account", email: item.email! });
+          } else {
+            onSelect({ kind: item.kind, id: item.id });
+          }
+          onClose();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, results, idx, onSelect, onClose]);
 
-  // Keep selected in view
   useEffect(() => {
     if (!listRef.current) return;
     const el = listRef.current.querySelector<HTMLElement>(`[data-idx="${idx}"]`);
@@ -67,14 +135,14 @@ export default function CommandPalette({ open, onClose, onSelect }: Props) {
   if (!open) return null;
 
   return (
-    <div className="cmd-overlay" onClick={onClose}>
+    <div className="cmd-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="cmd-modal" onClick={e => e.stopPropagation()}>
         <div className="cmd-input-wrap">
           <span className="icon">⌕</span>
           <input
             ref={inputRef}
             className="cmd-input"
-            placeholder="Search 530 questions or topics..."
+            placeholder="Search questions, courses, accounts…"
             value={q}
             onChange={e => { setQ(e.target.value); setIdx(0); }}
           />
@@ -84,14 +152,25 @@ export default function CommandPalette({ open, onClose, onSelect }: Props) {
           {results.length === 0 && <div className="cmd-empty">No matches — try a different word.</div>}
           {results.map((r, i) => (
             <div
-              key={r.id}
+              key={r.key}
               data-idx={i}
               className={`cmd-result ${i === idx ? "selected" : ""}`}
               onMouseEnter={() => setIdx(i)}
-              onClick={() => { onSelect(r.id); onClose(); }}
+              onClick={() => {
+                if (r.kind === "account") {
+                  onSelect({ kind: "account", email: r.email! });
+                } else {
+                  onSelect({ kind: r.kind, id: r.id });
+                }
+                onClose();
+              }}
             >
-              <div className="q">{r.question}</div>
-              <div className="meta"><span>{r.topic}</span><span>·</span><span>#{r.id}</span></div>
+              <div className="q">{r.primary}</div>
+              <div className="meta">
+                <span style={{ color: r.kind === "course" ? "var(--accent)" : r.kind === "account" ? "var(--yellow)" : undefined }}>
+                  {r.iconPrefix} {r.secondary}
+                </span>
+              </div>
             </div>
           ))}
         </div>

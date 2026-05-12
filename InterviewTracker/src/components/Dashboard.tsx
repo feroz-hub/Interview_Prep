@@ -1,9 +1,12 @@
 import { useMemo } from "react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  PieChart, Pie, Cell, Legend
 } from "recharts";
-import type { AppState } from "../types";
+import type { AppState, Course, CourseSession, UdemyAccount } from "../types";
 import { QUESTIONS } from "../data/questions";
+import { streamColor } from "../data/courses";
+import AccountChip, { AccountAvatar } from "./courses/AccountChip";
 import ActivityRing from "./ActivityRing";
 import Constellation from "./Constellation";
 
@@ -11,6 +14,11 @@ interface Props {
   state: AppState;
   onJumpToTopic?: (topic: string) => void;
   dbStats?: () => { sizeBytes: number; tables: { name: string; rows: number }[] };
+  courses?: Course[];
+  courseSessions?: CourseSession[];
+  udemyAccounts?: UdemyAccount[];
+  onJumpToCourse?: (courseId: number) => void;
+  onJumpToAccount?: (email: string) => void;
 }
 
 function formatBytes(n: number): string {
@@ -19,7 +27,16 @@ function formatBytes(n: number): string {
   return (n / (1024 * 1024)).toFixed(2) + " MB";
 }
 
-export default function Dashboard({ state, onJumpToTopic, dbStats }: Props) {
+export default function Dashboard({
+  state,
+  onJumpToTopic,
+  dbStats,
+  courses = [],
+  courseSessions = [],
+  udemyAccounts = [],
+  onJumpToCourse,
+  onJumpToAccount,
+}: Props) {
   const stats = useMemo(() => {
     const total = QUESTIONS.length;
     const counts = { new: 0, learning: 0, review: 0, mastered: 0 };
@@ -271,6 +288,16 @@ export default function Dashboard({ state, onJumpToTopic, dbStats }: Props) {
         ))}
       </div>
 
+      {courses.length > 0 && (
+        <CoursesPanel
+          courses={courses}
+          sessions={courseSessions}
+          accounts={udemyAccounts}
+          onJumpToCourse={onJumpToCourse}
+          onJumpToAccount={onJumpToAccount}
+        />
+      )}
+
       {dbStats && (() => {
         const s = dbStats();
         return (
@@ -296,6 +323,333 @@ export default function Dashboard({ state, onJumpToTopic, dbStats }: Props) {
           </div>
         );
       })()}
+    </>
+  );
+}
+
+function isoDateLocal(d: Date = new Date()): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function CoursesPanel({
+  courses,
+  sessions,
+  accounts,
+  onJumpToCourse,
+  onJumpToAccount,
+}: {
+  courses: Course[];
+  sessions: CourseSession[];
+  accounts: UdemyAccount[];
+  onJumpToCourse?: (id: number) => void;
+  onJumpToAccount?: (email: string) => void;
+}) {
+  const stats = useMemo(() => {
+    const total = courses.length;
+    const completed = courses.filter((c) => c.status === "completed").length;
+    const inProgress = courses.filter((c) => c.status === "in_progress").length;
+    const notStarted = courses.filter((c) => c.status === "not_started").length;
+    const paused = courses.filter((c) => c.status === "paused").length;
+    const dropped = courses.filter((c) => c.status === "dropped").length;
+
+    const statusPie = [
+      { name: "Completed",   value: completed,  color: "#22c55e" },
+      { name: "In progress", value: inProgress, color: "#f59e0b" },
+      { name: "Not started", value: notStarted, color: "#64748b" },
+      { name: "Paused",      value: paused,     color: "#94a3b8" },
+      { name: "Dropped",     value: dropped,    color: "#ef4444" },
+    ].filter((d) => d.value > 0);
+
+    // Stacked by stream
+    const streams = [...new Set(courses.map((c) => c.stream))].sort();
+    const stacked = streams.map((stream) => {
+      const inStream = courses.filter((c) => c.stream === stream);
+      return {
+        stream,
+        completed: inStream.filter((c) => c.status === "completed").length,
+        in_progress: inStream.filter((c) => c.status === "in_progress").length,
+        not_started: inStream.filter((c) => c.status === "not_started").length,
+      };
+    });
+
+    // Continue learning (top 5 in_progress by last session date, fallback to updatedAt)
+    const lastSession = new Map<number, string>();
+    for (const s of sessions) {
+      const cur = lastSession.get(s.courseId);
+      if (!cur || s.date > cur) lastSession.set(s.courseId, s.date);
+    }
+    const continueLearning = courses
+      .filter((c) => c.status === "in_progress")
+      .sort((a, b) => {
+        const ad = lastSession.get(a.id) ?? a.updatedAt.slice(0, 10);
+        const bd = lastSession.get(b.id) ?? b.updatedAt.slice(0, 10);
+        return bd.localeCompare(ad);
+      })
+      .slice(0, 5);
+
+    // At-risk: target_date < today+14 and progress<50
+    const horizon = new Date();
+    horizon.setDate(horizon.getDate() + 14);
+    const horizonIso = isoDateLocal(horizon);
+    const atRisk = courses
+      .filter((c) => c.targetDate && c.targetDate <= horizonIso && c.progressPct < 50 && c.status !== "completed")
+      .sort((a, b) => (a.targetDate ?? "").localeCompare(b.targetDate ?? ""))
+      .slice(0, 5);
+
+    // Total minutes (all-time) and per-day last 14 for sparkline
+    const totalMins = sessions.reduce((s, x) => s + x.minutes, 0);
+    const days: { day: string; mins: number }[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const k = isoDateLocal(d);
+      const m = sessions.filter((s) => s.date === k).reduce((s, x) => s + x.minutes, 0);
+      days.push({ day: k.slice(5), mins: m });
+    }
+    const minsThisWeek = days.slice(-7).reduce((s, x) => s + x.mins, 0);
+    const maxDay = Math.max(1, ...days.map((d) => d.mins));
+
+    // Stacked by account: count of courses per account by status
+    const accountStacked = accounts.map((a) => {
+      const inAcc = courses.filter((c) => c.accountEmail === a.email);
+      return {
+        account: a,
+        label: a.displayName || a.email.split("@")[0],
+        color: a.color,
+        completed: inAcc.filter((c) => c.status === "completed").length,
+        in_progress: inAcc.filter((c) => c.status === "in_progress").length,
+        not_started: inAcc.filter((c) => c.status === "not_started").length,
+      };
+    });
+    const unassignedCount = courses.filter((c) => !c.accountEmail).length;
+    if (unassignedCount > 0) {
+      accountStacked.push({
+        account: undefined as unknown as UdemyAccount,
+        label: "Unassigned",
+        color: "#64748b",
+        completed: courses.filter((c) => !c.accountEmail && c.status === "completed").length,
+        in_progress: courses.filter((c) => !c.accountEmail && c.status === "in_progress").length,
+        not_started: courses.filter((c) => !c.accountEmail && c.status === "not_started").length,
+      });
+    }
+
+    const thisWeekStart = isoDateLocal(new Date(new Date().getTime() - ((new Date().getDay() + 6) % 7) * 86400000));
+    const accountLeaderboard = accounts.map((a) => {
+      const inAcc = courses.filter((c) => c.accountEmail === a.email);
+      const inAccIds = new Set(inAcc.map((c) => c.id));
+      const minsThisWeek = sessions
+        .filter((s) => s.date >= thisWeekStart && inAccIds.has(s.courseId))
+        .reduce((s, x) => s + x.minutes, 0);
+      const totalMins = sessions
+        .filter((s) => inAccIds.has(s.courseId))
+        .reduce((s, x) => s + x.minutes, 0);
+      const avgProgress = inAcc.length
+        ? Math.round(inAcc.reduce((s, c) => s + c.progressPct, 0) / inAcc.length)
+        : 0;
+      return {
+        account: a,
+        courseCount: inAcc.length,
+        avgProgress,
+        minsThisWeek,
+        totalMins,
+      };
+    }).sort((a, b) => b.minsThisWeek - a.minsThisWeek || b.avgProgress - a.avgProgress);
+
+    return {
+      total, completed, inProgress, statusPie, stacked,
+      continueLearning, atRisk, totalMins, minsThisWeek, days, maxDay,
+      accountStacked, accountLeaderboard, lastSession,
+    };
+  }, [courses, sessions, accounts]);
+
+  return (
+    <>
+      <div className="section-title" style={{ marginTop: 18 }}>Courses</div>
+      <div className="stat-strip">
+        <div className="mini-stat glass">
+          <span className="icon">🎓</span>
+          <div className="label">Courses</div>
+          <div className="value">{stats.total}</div>
+          <div className="sub">{stats.inProgress} in progress</div>
+        </div>
+        <div className="mini-stat glass">
+          <span className="icon">⏱</span>
+          <div className="label">Minutes (all time)</div>
+          <div className="value" style={{ color: "var(--accent)" }}>{stats.totalMins}</div>
+          <div className="sub">{stats.minsThisWeek} this week</div>
+        </div>
+        <div className="mini-stat glass" style={{ alignItems: "flex-start" }}>
+          <div className="label">Last 14 days</div>
+          <div className="sparkline" aria-label="14-day minutes sparkline">
+            {stats.days.map((d) => (
+              <i
+                key={d.day}
+                style={{ height: `${(d.mins / stats.maxDay) * 100}%` }}
+                title={`${d.day}: ${d.mins} min`}
+              />
+            ))}
+          </div>
+          <div className="sub">peak {stats.maxDay}m</div>
+        </div>
+        <div className="mini-stat glass">
+          <span className="icon">✅</span>
+          <div className="label">Completed</div>
+          <div className="value" style={{ color: "var(--green)" }}>{stats.completed}</div>
+          <div className="sub">{stats.total ? Math.round((stats.completed / stats.total) * 100) : 0}% of catalog</div>
+        </div>
+      </div>
+
+      <div className="courses-dash">
+        <div className="glass panel">
+          <h4>Status mix</h4>
+          {stats.statusPie.length === 0 ? (
+            <div className="muted" style={{ fontSize: 12 }}>No courses yet.</div>
+          ) : (
+            <div style={{ height: 200 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.statusPie} dataKey="value" nameKey="name" innerRadius={48} outerRadius={72}>
+                    {stats.statusPie.map((d) => (
+                      <Cell key={d.name} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--bg-1)",
+                      border: "1px solid var(--border-hi)",
+                      borderRadius: 8,
+                      fontSize: 11,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        <div className="glass panel">
+          <h4>By stream</h4>
+          <div style={{ height: 200 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.stacked}>
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="stream" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-25} textAnchor="end" height={60} />
+                <YAxis stroke="var(--text-3)" fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--bg-1)",
+                    border: "1px solid var(--border-hi)",
+                    borderRadius: 8,
+                    fontSize: 11,
+                  }}
+                />
+                <Bar dataKey="completed"   stackId="a" fill="#22c55e" />
+                <Bar dataKey="in_progress" stackId="a" fill="#f59e0b" />
+                <Bar dataKey="not_started" stackId="a" fill="#64748b" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="glass panel">
+          <h4>Continue learning</h4>
+          {stats.continueLearning.length === 0 ? (
+            <div className="muted" style={{ fontSize: 12 }}>No in-progress courses.</div>
+          ) : (
+            <div className="continue-list">
+              {stats.continueLearning.map((c) => (
+                <div key={c.id} className="item" onClick={() => onJumpToCourse?.(c.id)}>
+                  <span className="stream-tag" style={{ color: streamColor(c.stream) }}>
+                    {c.stream}
+                  </span>
+                  <AccountChip
+                    account={accounts.find((a) => a.email === c.accountEmail)}
+                    email={c.accountEmail}
+                    compact
+                  />
+                  <span className="name" title={c.title}>{c.title}</span>
+                  <span className="pct">{c.progressPct}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <h4 style={{ marginTop: 14 }}>At risk</h4>
+          {stats.atRisk.length === 0 ? (
+            <div className="muted" style={{ fontSize: 12 }}>Nothing flagged.</div>
+          ) : (
+            <div className="continue-list">
+              {stats.atRisk.map((c) => (
+                <div key={c.id} className="item at-risk-item" onClick={() => onJumpToCourse?.(c.id)}>
+                  <span className="stream-tag" style={{ color: streamColor(c.stream) }}>
+                    {c.stream}
+                  </span>
+                  <AccountChip
+                    account={accounts.find((a) => a.email === c.accountEmail)}
+                    email={c.accountEmail}
+                    compact
+                  />
+                  <span className="name" title={c.title}>{c.title}</span>
+                  <span className="pct">{c.targetDate}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {accounts.length > 0 && (
+        <div className="courses-dash">
+          <div className="glass panel" style={{ gridColumn: "span 2" }}>
+            <h4>Courses by Udemy account</h4>
+            <div style={{ height: 220 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.accountStacked}>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={60} />
+                  <YAxis stroke="var(--text-3)" fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--bg-1)",
+                      border: "1px solid var(--border-hi)",
+                      borderRadius: 8,
+                      fontSize: 11,
+                    }}
+                  />
+                  <Bar dataKey="completed"   stackId="a" fill="#22c55e" />
+                  <Bar dataKey="in_progress" stackId="a" fill="#f59e0b" />
+                  <Bar dataKey="not_started" stackId="a" fill="#64748b" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="glass panel">
+            <h4>Account leaderboard</h4>
+            {stats.accountLeaderboard.length === 0 ? (
+              <div className="muted" style={{ fontSize: 12 }}>No Udemy accounts yet.</div>
+            ) : (
+              <div className="continue-list">
+                {stats.accountLeaderboard.map((row) => (
+                  <div
+                    key={row.account.email}
+                    className="item"
+                    onClick={() => onJumpToAccount?.(row.account.email)}
+                  >
+                    <AccountAvatar account={row.account} size="sm" />
+                    <span className="name" title={row.account.email}>
+                      {row.account.displayName || row.account.email.split("@")[0]}
+                    </span>
+                    <span className="pct">
+                      {row.minsThisWeek}m · {row.courseCount}c · {row.avgProgress}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -6,12 +6,24 @@ import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
 // Vite turns this into a hashed, served URL.
 import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 import { QUESTIONS } from "../data/questions";
-import type { ProgressEntry, Status, ActivityDay } from "../types";
+import { SEED_COURSES } from "../data/courses";
+import type {
+  ProgressEntry,
+  Status,
+  ActivityDay,
+  Course,
+  CourseSection,
+  CourseTopic,
+  CourseSession,
+  CourseStatus,
+  TopicStatus,
+  UdemyAccount,
+} from "../types";
 
 const IDB_NAME = "interview-tracker-db";
 const IDB_STORE = "sqlite";
 const IDB_KEY = "main";
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 // Dev-server endpoints provided by vite-plugin-db-sync. When the dev server is
 // running, the real .db file on disk (data/interview-tracker.db) is the source
@@ -143,9 +155,171 @@ function createSchema(d: Database) {
     CREATE INDEX IF NOT EXISTS idx_progress_status ON progress(status);
     CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions(topic);
   `);
+  createCoursesSchema(d);
   d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`, [
     String(SCHEMA_VERSION),
   ]);
+}
+
+function createCoursesSchema(d: Database) {
+  d.run(`
+    CREATE TABLE IF NOT EXISTS udemy_accounts (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      email        TEXT NOT NULL UNIQUE,
+      display_name TEXT,
+      color        TEXT NOT NULL DEFAULT '#7c8cff',
+      is_primary   INTEGER NOT NULL DEFAULT 0,
+      notes        TEXT NOT NULL DEFAULT '',
+      created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS courses (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      title           TEXT NOT NULL,
+      stream          TEXT NOT NULL,
+      platform        TEXT NOT NULL DEFAULT 'Udemy',
+      account_email   TEXT,
+      url             TEXT,
+      total_sections  INTEGER NOT NULL DEFAULT 0,
+      total_lectures  INTEGER NOT NULL DEFAULT 0,
+      total_minutes   INTEGER NOT NULL DEFAULT 0,
+      progress_pct    REAL NOT NULL DEFAULT 0,
+      status          TEXT NOT NULL DEFAULT 'not_started',
+      priority        INTEGER NOT NULL DEFAULT 3,
+      target_date     TEXT,
+      started_at      TEXT,
+      completed_at    TEXT,
+      notes           TEXT NOT NULL DEFAULT '',
+      created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_courses_title ON courses(title);
+
+    CREATE TABLE IF NOT EXISTS course_sections (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id       INTEGER NOT NULL,
+      order_index     INTEGER NOT NULL,
+      title           TEXT NOT NULL,
+      total_lectures  INTEGER NOT NULL DEFAULT 0,
+      total_minutes   INTEGER NOT NULL DEFAULT 0,
+      progress_pct    REAL NOT NULL DEFAULT 0,
+      status          TEXT NOT NULL DEFAULT 'not_started',
+      notes           TEXT NOT NULL DEFAULT '',
+      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS course_topics (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      section_id      INTEGER NOT NULL,
+      order_index     INTEGER NOT NULL,
+      title           TEXT NOT NULL,
+      duration_min    INTEGER NOT NULL DEFAULT 0,
+      status          TEXT NOT NULL DEFAULT 'not_started',
+      watched_seconds INTEGER NOT NULL DEFAULT 0,
+      rating          INTEGER,
+      notes           TEXT NOT NULL DEFAULT '',
+      completed_at    TEXT,
+      FOREIGN KEY (section_id) REFERENCES course_sections(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS course_sessions (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id       INTEGER NOT NULL,
+      topic_id        INTEGER,
+      date            TEXT NOT NULL,
+      minutes         INTEGER NOT NULL,
+      notes           TEXT NOT NULL DEFAULT '',
+      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_courses_stream    ON courses(stream);
+    CREATE INDEX IF NOT EXISTS idx_courses_status    ON courses(status);
+    CREATE INDEX IF NOT EXISTS idx_courses_account   ON courses(account_email);
+    CREATE INDEX IF NOT EXISTS idx_sections_course   ON course_sections(course_id);
+    CREATE INDEX IF NOT EXISTS idx_topics_section    ON course_topics(section_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_course   ON course_sessions(course_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_date     ON course_sessions(date);
+  `);
+}
+
+function getSchemaVersion(d: Database): number {
+  const stmt = d.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`);
+  let v = 0;
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as { value?: string };
+    v = Number(row.value ?? 0) || 0;
+  }
+  stmt.free();
+  return v;
+}
+
+// Idempotent v1 -> v2 migration. Safe to run repeatedly.
+function migrateToV2(d: Database) {
+  createCoursesSchema(d);
+  d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`, [
+    String(SCHEMA_VERSION),
+  ]);
+}
+
+function runMigrations(d: Database) {
+  // meta table is part of v1; createSchema also runs CREATE IF NOT EXISTS first,
+  // so this is safe even on a fresh DB.
+  const current = getSchemaVersion(d);
+  if (current < 2) migrateToV2(d);
+}
+
+interface SeedAccount {
+  email: string;
+  displayName: string;
+  color: string;
+  isPrimary: boolean;
+}
+const SEED_ACCOUNTS: SeedAccount[] = [
+  { email: "bashaferoz66@gmail.com",         displayName: "Primary",     color: "#7c8cff", isPrimary: true  },
+  { email: "bashaferoz027@gmail.com",        displayName: "Secondary",   color: "#34d399", isPrimary: false },
+  { email: "ferozebasha2001@gmail.com",      displayName: "Personal",    color: "#f59e0b", isPrimary: false },
+  { email: "info.firoseenterprises@gmail.com", displayName: "Enterprises", color: "#ef4444", isPrimary: false },
+  { email: "feroze.learning@gmail.com",      displayName: "Learning",    color: "#a855f7", isPrimary: false },
+];
+
+function seedAccounts(d: Database) {
+  const stmt = d.prepare(
+    `INSERT OR IGNORE INTO udemy_accounts (email, display_name, color, is_primary)
+     VALUES (?, ?, ?, ?)`
+  );
+  d.run("BEGIN");
+  for (const a of SEED_ACCOUNTS) {
+    stmt.run([a.email, a.displayName, a.color, a.isPrimary ? 1 : 0]);
+  }
+  d.run("COMMIT");
+  stmt.free();
+}
+
+function seedCourses(d: Database) {
+  const stmt = d.prepare(
+    `INSERT OR IGNORE INTO courses
+       (title, stream, platform, progress_pct, status, priority, account_email)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  );
+  d.run("BEGIN");
+  for (const c of SEED_COURSES) {
+    const status: CourseStatus =
+      c.progressPct >= 100
+        ? "completed"
+        : c.progressPct > 0
+        ? "in_progress"
+        : "not_started";
+    stmt.run([
+      c.title,
+      c.stream,
+      c.platform ?? "Udemy",
+      c.progressPct,
+      status,
+      3,
+      c.accountEmail ?? null,
+    ]);
+  }
+  d.run("COMMIT");
+  stmt.free();
 }
 
 function seedQuestions(d: Database) {
@@ -224,11 +398,17 @@ export async function initDb(): Promise<Database> {
     if (existing && existing.byteLength > 0) {
       _db = new SQL.Database(existing);
       createSchema(_db);
+      runMigrations(_db);
       seedQuestions(_db);
+      seedAccounts(_db);
+      seedCourses(_db);
     } else {
       _db = new SQL.Database();
       createSchema(_db);
+      runMigrations(_db);
       seedQuestions(_db);
+      seedAccounts(_db);
+      seedCourses(_db);
       migrateLocalStorage(_db);
     }
     await persistNow();
@@ -328,7 +508,10 @@ export async function importSqliteFile(file: File): Promise<void> {
   _db = new SQL.Database(data);
   // Make sure schema is intact (in case importing an older DB)
   createSchema(_db);
+  runMigrations(_db);
   seedQuestions(_db);
+  seedAccounts(_db);
+  seedCourses(_db);
   await persistNow();
 }
 
@@ -441,9 +624,225 @@ export function clearAchievements(): void {
 export function dbStats(): { sizeBytes: number; tables: { name: string; rows: number }[] } {
   if (!_db) return { sizeBytes: 0, tables: [] };
   const data = _db.export();
-  const tables = ["questions", "progress", "activity", "achievements"].map((t) => {
+  const tables = [
+    "questions",
+    "progress",
+    "activity",
+    "achievements",
+    "udemy_accounts",
+    "courses",
+    "course_sections",
+    "course_topics",
+    "course_sessions",
+  ].map((t) => {
     const r = queryOne<{ c: number }>(`SELECT COUNT(*) as c FROM ${t}`);
     return { name: t, rows: r?.c ?? 0 };
   });
   return { sizeBytes: data.byteLength, tables };
+}
+
+// ---------- Meta key-value helpers ----------
+export function getMeta(key: string): string | null {
+  const r = queryOne<{ value: string }>(`SELECT value FROM meta WHERE key = ?`, [key]);
+  return r?.value ?? null;
+}
+
+export function setMeta(key: string, value: string): void {
+  run(
+    `INSERT INTO meta (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    [key, value]
+  );
+}
+
+// ---------- Courses helpers ----------
+interface CourseRow {
+  id: number;
+  title: string;
+  stream: string;
+  platform: string;
+  account_email: string | null;
+  url: string | null;
+  total_sections: number;
+  total_lectures: number;
+  total_minutes: number;
+  progress_pct: number;
+  status: CourseStatus;
+  priority: number;
+  target_date: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+function rowToCourse(r: CourseRow): Course {
+  return {
+    id: r.id,
+    title: r.title,
+    stream: r.stream,
+    platform: r.platform,
+    accountEmail: r.account_email,
+    url: r.url,
+    totalSections: r.total_sections,
+    totalLectures: r.total_lectures,
+    totalMinutes: r.total_minutes,
+    progressPct: r.progress_pct,
+    status: r.status,
+    priority: r.priority,
+    targetDate: r.target_date,
+    startedAt: r.started_at,
+    completedAt: r.completed_at,
+    notes: r.notes,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+export function loadAllCourses(): Course[] {
+  return query<CourseRow>(`SELECT * FROM courses ORDER BY updated_at DESC, id ASC`).map(rowToCourse);
+}
+
+export function loadCourse(id: number): Course | null {
+  const r = queryOne<CourseRow>(`SELECT * FROM courses WHERE id = ?`, [id]);
+  return r ? rowToCourse(r) : null;
+}
+
+interface SectionRow {
+  id: number;
+  course_id: number;
+  order_index: number;
+  title: string;
+  total_lectures: number;
+  total_minutes: number;
+  progress_pct: number;
+  status: CourseStatus;
+  notes: string;
+}
+
+function rowToSection(r: SectionRow): CourseSection {
+  return {
+    id: r.id,
+    courseId: r.course_id,
+    orderIndex: r.order_index,
+    title: r.title,
+    totalLectures: r.total_lectures,
+    totalMinutes: r.total_minutes,
+    progressPct: r.progress_pct,
+    status: r.status,
+    notes: r.notes,
+  };
+}
+
+export function loadSections(courseId: number): CourseSection[] {
+  return query<SectionRow>(
+    `SELECT * FROM course_sections WHERE course_id = ? ORDER BY order_index ASC, id ASC`,
+    [courseId]
+  ).map(rowToSection);
+}
+
+interface TopicRow {
+  id: number;
+  section_id: number;
+  order_index: number;
+  title: string;
+  duration_min: number;
+  status: TopicStatus;
+  watched_seconds: number;
+  rating: number | null;
+  notes: string;
+  completed_at: string | null;
+}
+
+function rowToTopic(r: TopicRow): CourseTopic {
+  return {
+    id: r.id,
+    sectionId: r.section_id,
+    orderIndex: r.order_index,
+    title: r.title,
+    durationMin: r.duration_min,
+    status: r.status,
+    watchedSeconds: r.watched_seconds,
+    rating: r.rating,
+    notes: r.notes,
+    completedAt: r.completed_at,
+  };
+}
+
+export function loadTopics(sectionId: number): CourseTopic[] {
+  return query<TopicRow>(
+    `SELECT * FROM course_topics WHERE section_id = ? ORDER BY order_index ASC, id ASC`,
+    [sectionId]
+  ).map(rowToTopic);
+}
+
+export function loadAllTopicsForCourse(courseId: number): CourseTopic[] {
+  return query<TopicRow>(
+    `SELECT t.* FROM course_topics t
+       JOIN course_sections s ON s.id = t.section_id
+      WHERE s.course_id = ?
+      ORDER BY s.order_index ASC, t.order_index ASC`,
+    [courseId]
+  ).map(rowToTopic);
+}
+
+interface SessionRow {
+  id: number;
+  course_id: number;
+  topic_id: number | null;
+  date: string;
+  minutes: number;
+  notes: string;
+}
+
+function rowToSession(r: SessionRow): CourseSession {
+  return {
+    id: r.id,
+    courseId: r.course_id,
+    topicId: r.topic_id,
+    date: r.date,
+    minutes: r.minutes,
+    notes: r.notes,
+  };
+}
+
+export function loadSessionsForCourse(courseId: number): CourseSession[] {
+  return query<SessionRow>(
+    `SELECT * FROM course_sessions WHERE course_id = ? ORDER BY date DESC, id DESC`,
+    [courseId]
+  ).map(rowToSession);
+}
+
+export function loadAllSessions(): CourseSession[] {
+  return query<SessionRow>(
+    `SELECT * FROM course_sessions ORDER BY date DESC, id DESC`
+  ).map(rowToSession);
+}
+
+// ---------- Udemy accounts ----------
+interface UdemyAccountRow {
+  id: number;
+  email: string;
+  display_name: string | null;
+  color: string;
+  is_primary: number;
+  notes: string;
+}
+
+function rowToAccount(r: UdemyAccountRow): UdemyAccount {
+  return {
+    id: r.id,
+    email: r.email,
+    displayName: r.display_name,
+    color: r.color,
+    isPrimary: !!r.is_primary,
+    notes: r.notes,
+  };
+}
+
+export function loadAllAccounts(): UdemyAccount[] {
+  return query<UdemyAccountRow>(
+    `SELECT * FROM udemy_accounts ORDER BY is_primary DESC, email ASC`
+  ).map(rowToAccount);
 }
