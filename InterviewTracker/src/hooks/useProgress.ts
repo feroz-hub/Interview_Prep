@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { AppState, ProgressEntry, Rating, Status } from "../types";
+import type { AppState, Confidence, ProgressEntry, Question, Rating, Status, Track } from "../types";
 import { applyRating, defaultProgress, isoDate } from "../lib/sm2";
 import {
   detectNewAchievements,
@@ -7,7 +7,6 @@ import {
   type Achievement,
 } from "../lib/achievements";
 import { fireConfetti } from "../lib/confetti";
-import { QUESTIONS } from "../data/questions";
 import {
   initDb,
   loadAllProgress,
@@ -19,36 +18,34 @@ import {
   resetDb,
   dbStats,
 } from "../lib/db";
-
-const TOTAL_TOPICS = new Set(QUESTIONS.map((q) => q.topic)).size;
-
-function topicTouchedCount(s: AppState): number {
-  const touched = new Set<string>();
-  for (const id in s.progress) {
-    const q = QUESTIONS.find((x) => x.id === Number(id));
-    if (q) touched.add(q.topic);
-  }
-  return touched.size;
-}
+import { awardXp } from "../lib/xp";
 
 export interface UseProgressApi {
   ready: boolean;
   state: AppState;
+  initError: Error | null;
   get: (id: number) => ProgressEntry;
-  setStatus: (id: number, status: Status) => void;
+  setStatus: (id: number, status: Status, track: Track) => void;
   setNotes: (id: number, notes: string) => void;
-  rate: (id: number, r: Rating) => void;
+  setConfidence: (id: number, c: Confidence, track: Track) => void;
+  rate: (id: number, r: Rating, track: Track) => void;
   reset: () => void;
   exportSqlite: () => void;
   importSqlite: (f: File) => Promise<void>;
   stats: () => { sizeBytes: number; tables: { name: string; rows: number }[] };
 }
 
-export function useProgress(onAchievement?: (a: Achievement) => void): UseProgressApi {
+export function useProgress(
+  questions: Question[],
+  onAchievement?: (a: Achievement) => void
+): UseProgressApi {
   const [ready, setReady] = useState(false);
+  const [initError, setInitError] = useState<Error | null>(null);
   const [state, setState] = useState<AppState>({ progress: {}, activity: {} });
 
-  // Initialize DB once, then hydrate React state
+  // Initialize DB once, then hydrate React state. If init fails we still set
+  // ready=true so the user gets out of the loader and sees the error UI; the
+  // DB will be empty but interactive.
   useEffect(() => {
     let cancelled = false;
     initDb().then(() => {
@@ -60,38 +57,33 @@ export function useProgress(onAchievement?: (a: Achievement) => void): UseProgre
       setReady(true);
     }).catch((e) => {
       console.error("DB init failed:", e);
+      if (cancelled) return;
+      setInitError(e instanceof Error ? e : new Error(String(e)));
+      setReady(true);
     });
     return () => { cancelled = true; };
   }, []);
 
-  // Detect achievements after every state update
+  // Detect achievements after every state update — scoped to the active question list.
   useEffect(() => {
     if (!onAchievement || !ready) return;
-    const a1 = detectNewAchievements(state, TOTAL_TOPICS);
-    const a2 = detectTopicAchievements(topicTouchedCount(state), TOTAL_TOPICS);
+    const a1 = detectNewAchievements(state, new Set(questions.map((q) => q.topic)).size);
+    const touchedTopics = new Set<string>();
+    for (const id in state.progress) {
+      const q = questions.find((x) => x.id === Number(id));
+      if (q) touchedTopics.add(q.topic);
+    }
+    const a2 = detectTopicAchievements(touchedTopics.size, new Set(questions.map((q) => q.topic)).size);
     [...a1, ...a2].forEach((a) => onAchievement(a));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, ready]);
+  }, [state, ready, questions]);
 
   const get = useCallback(
     (id: number): ProgressEntry => state.progress[id] ?? defaultProgress(),
     [state]
   );
 
-  const updateProgressInState = (id: number, entry: ProgressEntry) => {
-    setState((s) => ({ ...s, progress: { ...s.progress, [id]: entry } }));
-  };
-  const updateActivityInState = (date: string, kind: "reviews" | "marked") => {
-    setState((s) => {
-      const day = s.activity[date] ?? { date, reviews: 0, marked: 0 };
-      return {
-        ...s,
-        activity: { ...s.activity, [date]: { ...day, [kind]: day[kind] + 1 } },
-      };
-    });
-  };
-
-  const setStatus = useCallback((id: number, status: Status) => {
+  const setStatus = useCallback((id: number, status: Status, track: Track) => {
     if (!ready) return;
     setState((s) => {
       const prev = s.progress[id] ?? defaultProgress();
@@ -103,9 +95,11 @@ export function useProgress(onAchievement?: (a: Achievement) => void): UseProgre
         next.lastReviewed = new Date().toISOString();
         next.interval = 1;
         next.repetitions = 1;
+        awardXp(track, "first-mark", id);
       }
       if (prev.status !== "mastered" && status === "mastered") {
         setTimeout(() => fireConfetti(), 50);
+        awardXp(track, "master", id);
       }
       // Persist to SQL
       upsertProgress(id, next);
@@ -130,18 +124,42 @@ export function useProgress(onAchievement?: (a: Achievement) => void): UseProgre
     });
   }, [ready]);
 
-  const rate = useCallback((id: number, r: Rating) => {
+  const setConfidence = useCallback((id: number, c: Confidence, track: Track) => {
+    if (!ready) return;
+    setState((s) => {
+      const prev = s.progress[id] ?? defaultProgress();
+      const prevC = prev.confidence ?? 0;
+      const next: ProgressEntry = { ...prev, confidence: c };
+      if (c > prevC) {
+        // Award XP for each notch raised — encourages calibration improvement.
+        for (let i = 0; i < c - prevC; i++) awardXp(track, "confidence-up", id);
+      }
+      upsertProgress(id, next);
+      return { ...s, progress: { ...s.progress, [id]: next } };
+    });
+  }, [ready]);
+
+  const rate = useCallback((id: number, r: Rating, track: Track) => {
     if (!ready) return;
     setState((s) => {
       const prev = s.progress[id] ?? defaultProgress();
       const next = applyRating(prev, r);
       if (prev.status !== "mastered" && next.status === "mastered") {
         setTimeout(() => fireConfetti(), 50);
+        awardXp(track, "master", id);
       }
+      awardXp(track, "rate", id);
+      if (r === "good" || r === "easy") awardXp(track, "rate-bonus", id);
       upsertProgress(id, next);
       const date = isoDate();
       bumpActivity(date, "reviews");
       const day = s.activity[date] ?? { date, reviews: 0, marked: 0 };
+      // Daily-streak bonus: if today had no reviews before this one, and yesterday did, award streak XP.
+      if (day.reviews === 0) {
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        const yKey = y.toISOString().slice(0, 10);
+        if ((s.activity[yKey]?.reviews ?? 0) > 0) awardXp(track, "streak-bonus", id);
+      }
       return {
         ...s,
         progress: { ...s.progress, [id]: next },
@@ -172,10 +190,9 @@ export function useProgress(onAchievement?: (a: Achievement) => void): UseProgre
 
   const stats = useCallback(() => dbStats(), []);
 
-  return { ready, state, get, setStatus, setNotes, rate, reset, exportSqlite, importSqlite, stats };
+  return { ready, state, initError, get, setStatus, setNotes, setConfidence, rate, reset, exportSqlite, importSqlite, stats };
 }
 
-// Re-use shape for activity day not exported elsewhere
-// (kept for type-narrowing if needed by callers)
+// Helper preserved for type-narrowing if needed by callers
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _typehelper(s: AppState) { return s; }

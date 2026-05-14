@@ -13,6 +13,7 @@ export function defaultProgress(): ProgressEntry {
     nextReview: null,
     reviewCount: 0,
     correctCount: 0,
+    confidence: 0,
   };
 }
 

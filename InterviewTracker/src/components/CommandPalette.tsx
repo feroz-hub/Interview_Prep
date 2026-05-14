@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QUESTIONS } from "../data/questions";
-import type { Course, UdemyAccount } from "../types";
+import type { Course, Question, UdemyAccount } from "../types";
 
 export type PaletteSelection =
   | { kind: "question"; id: number }
@@ -13,6 +13,8 @@ interface Props {
   onSelect: (sel: PaletteSelection) => void;
   courses?: Course[];
   accounts?: UdemyAccount[];
+  // Active question set (defaults to .NET if not passed, preserving old behavior).
+  questions?: Question[];
 }
 
 interface Item {
@@ -26,7 +28,8 @@ interface Item {
   iconPrefix: string;
 }
 
-export default function CommandPalette({ open, onClose, onSelect, courses = [], accounts = [] }: Props) {
+export default function CommandPalette({ open, onClose, onSelect, courses = [], accounts = [], questions }: Props) {
+  const QUESTION_CORPUS = questions ?? QUESTIONS;
   const [q, setQ] = useState("");
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +69,7 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
         iconPrefix: "🎓",
       });
     }
-    for (const item of QUESTIONS) {
+    for (const item of QUESTION_CORPUS) {
       out.push({
         key: `q-${item.id}`,
         kind: "question",
@@ -78,7 +81,7 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
       });
     }
     return out;
-  }, [courses, accounts]);
+  }, [courses, accounts, QUESTION_CORPUS]);
 
   const results = useMemo<Item[]>(() => {
     if (!q.trim()) return corpus.slice(0, 30);

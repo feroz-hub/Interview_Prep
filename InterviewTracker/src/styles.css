@@ -1653,3 +1653,342 @@ textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, monospac
   color: var(--text-3);
 }
 .danger-zone button { font-size: 11px; padding: 4px 10px; }
+
+/* ============================================================
+   Track switching (.NET ↔ Pentest)
+   ============================================================ */
+[data-track="pentest"] {
+  --accent: #ff5577;
+  --accent-2: #ff9a55;
+  --accent-glow: rgba(255, 85, 119, 0.45);
+  --mesh-1: #7c1d1d;
+  --mesh-2: #831843;
+  --mesh-3: #b91c1c;
+  --mesh-4: #1e1b4b;
+}
+
+.track-switcher {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-left: 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.track-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  border: none;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease;
+}
+.track-tab:hover { background: var(--bg-3); color: var(--text); }
+.track-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.track-tab .track-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.track-tab.active .track-count { background: rgba(255, 255, 255, 0.25); }
+
+/* ============================================================
+   XP bar in header
+   ============================================================ */
+.xp-bar-wrap {
+  min-width: 220px;
+  margin-right: 8px;
+}
+.xp-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.xp-bar-head { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-2); }
+.xp-level-pill {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.xp-title { font-weight: 600; color: var(--text); }
+.xp-amount {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.xp-bar-track {
+  height: 6px;
+  background: var(--bg-3);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 8px var(--accent-glow);
+  transition: width 400ms ease;
+}
+.xp-bar-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+/* ============================================================
+   Countdown panel
+   ============================================================ */
+.countdown-panel {
+  padding: 18px;
+  margin-bottom: 18px;
+  border-left: 3px solid var(--accent);
+}
+.countdown-empty .countdown-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+.countdown-empty input[type="date"] {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+.countdown-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.countdown-icon { font-size: 28px; }
+.countdown-headline { flex: 1; min-width: 200px; }
+.countdown-days {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.countdown-sub { font-size: 12px; color: var(--text-3); }
+.countdown-stat {
+  text-align: center;
+  padding: 6px 14px;
+  border-left: 1px dashed var(--border);
+}
+.countdown-stat .num {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.countdown-stat .lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+}
+.pace-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.pace-pill.pace-ahead { background: rgba(94, 240, 163, 0.18); color: var(--green); }
+.pace-pill.pace-on-track { background: rgba(255, 209, 102, 0.18); color: var(--yellow); }
+.pace-pill.pace-behind { background: rgba(255, 122, 144, 0.18); color: var(--red); }
+.pace-pill.pace-noplan { background: var(--bg-3); color: var(--text-3); }
+.countdown-actions { margin-left: auto; display: flex; gap: 6px; }
+.countdown-plan {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+.plan-label {
+  font-size: 11px;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.plan-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.plan-cell {
+  flex: 1;
+  min-width: 60px;
+  padding: 8px;
+  text-align: center;
+  background: var(--bg-2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.plan-day { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; }
+.plan-num { font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+
+/* ============================================================
+   Confidence dots
+   ============================================================ */
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+}
+.confidence.sm { margin: 8px 0; font-size: 12px; }
+.confidence-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.confidence-dots { display: flex; align-items: center; gap: 4px; }
+.confidence-dot {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 120ms ease, background 160ms ease, color 160ms ease;
+}
+.confidence-dot:hover { transform: scale(1.1); }
+.confidence-dot.filled {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.confidence-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+  margin-left: 4px;
+}
+.confidence-mini {
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-left: 8px;
+}
+
+/* ============================================================
+   Badges shelf
+   ============================================================ */
+.badges-shelf {
+  padding: 18px;
+  margin-top: 16px;
+}
+.badges-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.badges-head h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-2);
+  font-weight: 700;
+}
+.badges-count {
+  font-size: 12px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.badge-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: transform 120ms ease, border-color 160ms ease;
+}
+.badge-tile:hover { transform: translateY(-2px); }
+.badge-tile.locked { opacity: 0.45; filter: grayscale(0.6); }
+.badge-tile.got { border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+.badge-icon { font-size: 26px; flex-shrink: 0; }
+.badge-meta { flex: 1; min-width: 0; }
+.badge-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.badge-body { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.badge-checkmark {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--bg-0);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* ============================================================
+   Suggested-answer disclosure (Browse + Flashcards)
+   ============================================================ */
+.suggested-answer {
+  margin: 12px 0;
+  border: 1px dashed var(--border-hi);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+}
+.suggested-answer summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-2);
+  user-select: none;
+}
+.suggested-answer .sa-hint { color: var(--text-3); font-weight: 400; }
+.suggested-answer[open] summary { margin-bottom: 8px; }
+.sa-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+}

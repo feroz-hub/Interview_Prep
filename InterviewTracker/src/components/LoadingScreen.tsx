@@ -29,7 +29,7 @@ export default function LoadingScreen() {
             Initializing SQLite database…
           </div>
           <div style={{ fontSize: 13, color: "var(--text-2)" }}>
-            Loading WebAssembly · seeding 530 questions
+            Loading WebAssembly · 530 .NET + 500 Pentest questions
           </div>
         </div>
         <div style={{

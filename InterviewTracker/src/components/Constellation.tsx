@@ -1,17 +1,19 @@
 import { useMemo } from "react";
-import type { AppState } from "../types";
+import type { AppState, Question } from "../types";
 import { QUESTIONS } from "../data/questions";
 
 interface Props {
   state: AppState;
   onTopicClick?: (topic: string) => void;
+  questions?: Question[];
 }
 
 // Radial topic mind-map. Each topic is a node sized by total questions; color by mastery.
-export default function Constellation({ state, onTopicClick }: Props) {
+export default function Constellation({ state, onTopicClick, questions }: Props) {
+  const QSET = questions ?? QUESTIONS;
   const { topics, totalMastered, totalQuestions } = useMemo(() => {
     const map: Record<string, { total: number; mastered: number; learning: number }> = {};
-    for (const q of QUESTIONS) {
+    for (const q of QSET) {
       if (!map[q.topic]) map[q.topic] = { total: 0, mastered: 0, learning: 0 };
       map[q.topic].total += 1;
       const st = state.progress[q.id]?.status ?? "new";
@@ -26,7 +28,7 @@ export default function Constellation({ state, onTopicClick }: Props) {
       totalMastered: arr.reduce((s, t) => s + t.mastered, 0),
       totalQuestions: arr.reduce((s, t) => s + t.total, 0),
     };
-  }, [state]);
+  }, [state, QSET]);
 
   // SVG layout: viewBox 0 0 600 460, center at (300, 220)
   const cx = 300;

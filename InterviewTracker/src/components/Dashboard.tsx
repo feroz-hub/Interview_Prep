@@ -3,12 +3,14 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend
 } from "recharts";
-import type { AppState, Course, CourseSession, UdemyAccount } from "../types";
+import type { AppState, Badge, Course, CourseSession, Question, Track, UdemyAccount } from "../types";
 import { QUESTIONS } from "../data/questions";
 import { streamColor } from "../data/courses";
 import AccountChip, { AccountAvatar } from "./courses/AccountChip";
 import ActivityRing from "./ActivityRing";
 import Constellation from "./Constellation";
+import CountdownPanel from "./CountdownPanel";
+import BadgesShelf from "./BadgesShelf";
 
 interface Props {
   state: AppState;
@@ -19,6 +21,11 @@ interface Props {
   udemyAccounts?: UdemyAccount[];
   onJumpToCourse?: (courseId: number) => void;
   onJumpToAccount?: (email: string) => void;
+  // New: per-track question set + identity (defaults preserve old behavior)
+  activeQuestions?: Question[];
+  activeTrack?: Track;
+  xp?: number;
+  badges?: Badge[];
 }
 
 function formatBytes(n: number): string {
@@ -36,15 +43,19 @@ export default function Dashboard({
   udemyAccounts = [],
   onJumpToCourse,
   onJumpToAccount,
+  activeQuestions,
+  activeTrack = "dotnet",
+  badges = [],
 }: Props) {
+  const QSET: Question[] = activeQuestions ?? QUESTIONS;
   const stats = useMemo(() => {
-    const total = QUESTIONS.length;
+    const total = QSET.length;
     const counts = { new: 0, learning: 0, review: 0, mastered: 0 };
     const byTopic: Record<string, { total: number; done: number; mastered: number }> = {};
     let totalReviews = 0;
     let totalCorrect = 0;
 
-    for (const q of QUESTIONS) {
+    for (const q of QSET) {
       const p = state.progress[q.id];
       const status = p?.status ?? "new";
       counts[status as keyof typeof counts] += 1;
@@ -105,7 +116,7 @@ export default function Dashboard({
       total, counts, completed, inProgress, started, pct, startedPct,
       streak, last14, heatmap, topicRows, totalReviews, accuracy,
     };
-  }, [state]);
+  }, [state, QSET]);
 
   const heatLevel = (n: number): number => {
     if (n === 0) return 0;
@@ -117,6 +128,8 @@ export default function Dashboard({
 
   return (
     <>
+      <CountdownPanel track={activeTrack} questions={QSET} state={state} />
+
       <div className="dash-hero">
         <div className="hero-rings glass">
           <ActivityRing
@@ -214,7 +227,7 @@ export default function Dashboard({
       <div className="dash-grid">
         <div>
           <div className="section-title">Topic Constellation</div>
-          <Constellation state={state} onTopicClick={onJumpToTopic} />
+          <Constellation state={state} onTopicClick={onJumpToTopic} questions={QSET} />
         </div>
         <div>
           <div className="section-title">Reviews · Last 14 days</div>
@@ -287,6 +300,8 @@ export default function Dashboard({
           </div>
         ))}
       </div>
+
+      <BadgesShelf unlocked={badges} track={activeTrack} />
 
       {courses.length > 0 && (
         <CoursesPanel

@@ -1,12 +1,20 @@
+// A "track" is an interview prep stream — currently .NET and Pentest.
+export type Track = "dotnet" | "pentest";
+
 export interface Question {
   id: number;
   topic: string;
   question: string;
   exp: number;
   part: 1 | 2;
+  // Optional fields used by Pentest questions; .NET seed leaves these undefined.
+  track?: Track;
+  chapter?: number;
+  answer?: string;
 }
 
 export type Status = "new" | "learning" | "review" | "mastered";
+export type Confidence = 0 | 1 | 2 | 3 | 4 | 5; // 0 = unrated
 
 export interface ProgressEntry {
   status: Status;
@@ -19,6 +27,33 @@ export interface ProgressEntry {
   nextReview: string | null;    // ISO date
   reviewCount: number;
   correctCount: number;
+  // Self-rated confidence (0 = unrated, 1 weak .. 5 strong).
+  confidence?: Confidence;
+}
+
+// ---------- Motivation layer ----------
+export interface XpEvent {
+  id: number;
+  track: Track;
+  date: string;          // ISO timestamp
+  kind: string;          // e.g. "mark", "master", "rate-good", "confidence-up"
+  amount: number;
+  questionId: number | null;
+}
+
+export interface Badge {
+  id: string;            // unique badge id
+  track: Track;
+  icon: string;
+  title: string;
+  body: string;
+  unlockedAt: string;    // ISO timestamp
+}
+
+export interface InterviewDate {
+  track: Track;
+  date: string;          // YYYY-MM-DD (target interview date)
+  setAt: string;         // when user set it
 }
 
 export interface ActivityDay {

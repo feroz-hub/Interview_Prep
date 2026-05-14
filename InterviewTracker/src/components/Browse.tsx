@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AppState, Status } from "../types";
-import { QUESTIONS } from "../data/questions";
+import type { AppState, Confidence, Question, Status, Track } from "../types";
 import { defaultProgress } from "../lib/sm2";
+import ConfidenceDots from "./ConfidenceDots";
 
 interface BrowseProps {
   state: AppState;
   setStatus: (id: number, status: Status) => void;
   setNotes: (id: number, notes: string) => void;
+  setConfidence: (id: number, c: Confidence) => void;
   forcedTopic?: string | null;
   forcedQuestionId?: number | null;
+  questions: Question[];
+  track: Track;
 }
 
 const STATUS_OPTIONS: { value: Status | "all"; label: string }[] = [
@@ -26,16 +29,32 @@ const STATUS_LABEL: Record<Status, string> = {
   mastered: "Mastered",
 };
 
-export default function Browse({ state, setStatus, setNotes, forcedTopic, forcedQuestionId }: BrowseProps) {
+export default function Browse({
+  state,
+  setStatus,
+  setNotes,
+  setConfidence,
+  forcedTopic,
+  forcedQuestionId,
+  questions,
+  track,
+}: BrowseProps) {
   const topics = useMemo(() => {
-    const set = new Set(QUESTIONS.map(q => q.topic));
+    const set = new Set(questions.map((q) => q.topic));
     return ["all", ...Array.from(set).sort()];
-  }, []);
+  }, [questions]);
 
   const [search, setSearch] = useState("");
   const [topic, setTopic] = useState<string>("all");
   const [status, setStatusFilter] = useState<Status | "all">("all");
-  const [selectedId, setSelectedId] = useState<number | null>(QUESTIONS[0]?.id ?? null);
+  const [confidenceFilter, setConfidenceFilter] = useState<"all" | "low" | "unrated">("all");
+  const [selectedId, setSelectedId] = useState<number | null>(questions[0]?.id ?? null);
+
+  // Reset selection when track changes
+  useEffect(() => {
+    setSelectedId(questions[0]?.id ?? null);
+    setTopic("all");
+  }, [track, questions]);
 
   useEffect(() => {
     if (forcedTopic) setTopic(forcedTopic);
@@ -44,61 +63,75 @@ export default function Browse({ state, setStatus, setNotes, forcedTopic, forced
   useEffect(() => {
     if (forcedQuestionId) {
       setSelectedId(forcedQuestionId);
-      // Find question's topic so it shows up in the list
-      const q = QUESTIONS.find(x => x.id === forcedQuestionId);
+      const q = questions.find((x) => x.id === forcedQuestionId);
       if (q) {
         setSearch("");
         setStatusFilter("all");
         setTopic("all");
       }
     }
-  }, [forcedQuestionId]);
+  }, [forcedQuestionId, questions]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return QUESTIONS.filter(q => {
+    return questions.filter((q) => {
       if (topic !== "all" && q.topic !== topic) return false;
       const st = state.progress[q.id]?.status ?? "new";
       if (status !== "all" && st !== status) return false;
-      if (s && !q.question.toLowerCase().includes(s)) return false;
+      const conf = state.progress[q.id]?.confidence ?? 0;
+      if (confidenceFilter === "low" && conf > 2) return false;
+      if (confidenceFilter === "unrated" && conf !== 0) return false;
+      if (s && !(q.question.toLowerCase().includes(s) || (q.answer ?? "").toLowerCase().includes(s))) return false;
       return true;
     });
-  }, [search, topic, status, state]);
+  }, [search, topic, status, confidenceFilter, state, questions]);
 
-  const selected = QUESTIONS.find(q => q.id === selectedId) ?? filtered[0];
+  const selected = questions.find((q) => q.id === selectedId) ?? filtered[0];
   const sp = selected ? (state.progress[selected.id] ?? defaultProgress()) : null;
+
+  const placeholderQ = `Search ${questions.length} ${track === "pentest" ? "pentest" : "questions"}…`;
 
   return (
     <div className="browse">
       <div className="glass list-pane">
         <div className="filters">
           <input
-            placeholder="Search 530 questions…"
+            placeholder={placeholderQ}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
-          <select value={topic} onChange={e => setTopic(e.target.value)}>
-            {topics.map(t => (
+          <select value={topic} onChange={(e) => setTopic(e.target.value)}>
+            {topics.map((t) => (
               <option key={t} value={t}>
-                {t === "all" ? `All topics (${QUESTIONS.length})` : t}
+                {t === "all" ? `All topics (${questions.length})` : t}
               </option>
             ))}
           </select>
           <select
             value={status}
-            onChange={e => setStatusFilter(e.target.value as Status | "all")}
+            onChange={(e) => setStatusFilter(e.target.value as Status | "all")}
           >
-            {STATUS_OPTIONS.map(o => (
+            {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
+          </select>
+          <select
+            value={confidenceFilter}
+            onChange={(e) => setConfidenceFilter(e.target.value as "all" | "low" | "unrated")}
+            title="Filter by self-rated confidence"
+          >
+            <option value="all">All confidence</option>
+            <option value="low">Low confidence (≤2)</option>
+            <option value="unrated">Unrated</option>
           </select>
           <div style={{ fontSize: 12, color: "var(--text-3)", textAlign: "center" }}>
             {filtered.length} matching · scroll to see all
           </div>
         </div>
         <div className="list">
-          {filtered.map(q => {
+          {filtered.map((q) => {
             const st = state.progress[q.id]?.status ?? "new";
+            const conf = state.progress[q.id]?.confidence ?? 0;
             return (
               <div
                 key={q.id}
@@ -110,6 +143,11 @@ export default function Browse({ state, setStatus, setNotes, forcedTopic, forced
                   <span className="q-text">{q.question}</span>
                 </div>
                 <span className="topic-tag">{q.topic}</span>
+                {conf > 0 && (
+                  <span className="confidence-mini" title={`Confidence ${conf}/5`}>
+                    {"●".repeat(conf)}{"○".repeat(5 - conf)}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -124,7 +162,10 @@ export default function Browse({ state, setStatus, setNotes, forcedTopic, forced
           <>
             <div className="row" style={{ justifyContent: "space-between" }}>
               <span className="topic-tag">{selected.topic}</span>
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>#{selected.id} · Part {selected.part}</span>
+              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                #{selected.id} · Part {selected.part}
+                {selected.chapter ? ` · Ch ${selected.chapter}` : ""}
+              </span>
             </div>
             <h2>{selected.question}</h2>
 
@@ -143,6 +184,11 @@ export default function Browse({ state, setStatus, setNotes, forcedTopic, forced
               </button>
             </div>
 
+            <ConfidenceDots
+              value={(sp.confidence ?? 0) as Confidence}
+              onChange={(c) => setConfidence(selected.id, c)}
+            />
+
             <div className="meta">
               <span>Status: <strong>{STATUS_LABEL[sp.status]}</strong></span>
               <span>Reviews: <strong>{sp.reviewCount}</strong></span>
@@ -155,12 +201,22 @@ export default function Browse({ state, setStatus, setNotes, forcedTopic, forced
               )}
             </div>
 
+            {selected.answer && (
+              <details className="suggested-answer">
+                <summary>
+                  <strong>Suggested answer</strong>
+                  <span className="sa-hint"> — peek only after attempting in your own words</span>
+                </summary>
+                <div className="sa-body">{selected.answer}</div>
+              </details>
+            )}
+
             <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: "block" }}>
               Your notes / answer
             </label>
             <textarea
               value={sp.notes}
-              onChange={e => setNotes(selected.id, e.target.value)}
+              onChange={(e) => setNotes(selected.id, e.target.value)}
               placeholder="Write your answer, code snippets, mnemonics… (Markdown-friendly)"
             />
 

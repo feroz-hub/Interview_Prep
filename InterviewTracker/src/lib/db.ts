@@ -6,7 +6,10 @@ import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
 // Vite turns this into a hashed, served URL.
 import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 import { QUESTIONS } from "../data/questions";
+// Pentest set is 271 KB. Lazy-import so it lives in a separate chunk that
+// is only fetched the first time we actually seed it.
 import { SEED_COURSES } from "../data/courses";
+const PENTEST_TARGET = 500;
 import type {
   ProgressEntry,
   Status,
@@ -18,19 +21,27 @@ import type {
   CourseStatus,
   TopicStatus,
   UdemyAccount,
+  Track,
+  Badge,
+  XpEvent,
+  InterviewDate,
 } from "../types";
 
 const IDB_NAME = "interview-tracker-db";
 const IDB_STORE = "sqlite";
 const IDB_KEY = "main";
-const SCHEMA_VERSION = 2;
+// v3: add `track`, `chapter`, `answer` to questions; `confidence` to progress;
+//     new tables xp_log, badges, interview_dates.
+const SCHEMA_VERSION = 3;
 
 // Dev-server endpoints provided by vite-plugin-db-sync. When the dev server is
 // running, the real .db file on disk (data/interview-tracker.db) is the source
-// of truth. In production builds these endpoints don't exist and the app falls
-// back to IndexedDB only.
+// of truth. In production builds these endpoints don't exist; we then try the
+// static initial-db.sqlite asset (baked at build time) and finally fall back
+// to a fresh empty DB.
 const DISK_LOAD_URL = "/__db/load";
 const DISK_SAVE_URL = "/__db/save";
+const INITIAL_DB_URL = "/initial-db.sqlite";
 
 let SQL: SqlJsStatic | null = null;
 let _db: Database | null = null;
@@ -89,11 +100,34 @@ async function loadFromDisk(): Promise<Uint8Array | null> {
       return null;
     }
     if (!res.ok) return null;
+    // In production the SPA rewrite happily returns 200 + index.html for any
+    // unknown path. The dev plugin returns application/x-sqlite3. Use the
+    // content-type to tell the two apart so we never feed HTML to sql.js.
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("text/html")) return null;
     diskSyncEnabled = true;
     const buf = await res.arrayBuffer();
     return buf.byteLength > 0 ? new Uint8Array(buf) : null;
   } catch {
     // No dev server (production build, or server down) — silently disable.
+    return null;
+  }
+}
+
+// Production-only: fetch the bundled initial DB asset (copied into public/
+// at build time from data/interview-tracker.db). Used to seed first-time
+// visitors with the deploy-time progress snapshot.
+async function loadInitialBundledDb(): Promise<Uint8Array | null> {
+  try {
+    const res = await fetch(INITIAL_DB_URL, { cache: "no-store" });
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") ?? "";
+    // Vercel returns text/html for missing static assets via the SPA rewrite.
+    // Guard against that so we don't load the index.html as SQLite.
+    if (ct.includes("text/html")) return null;
+    const buf = await res.arrayBuffer();
+    return buf.byteLength > 0 ? new Uint8Array(buf) : null;
+  } catch {
     return null;
   }
 }
@@ -122,7 +156,10 @@ function createSchema(d: Database) {
       topic TEXT NOT NULL,
       question TEXT NOT NULL,
       exp INTEGER NOT NULL DEFAULT 1,
-      part INTEGER NOT NULL DEFAULT 1
+      part INTEGER NOT NULL DEFAULT 1,
+      track TEXT NOT NULL DEFAULT 'dotnet',
+      chapter INTEGER,
+      answer TEXT NOT NULL DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS progress (
       question_id INTEGER PRIMARY KEY,
@@ -135,6 +172,7 @@ function createSchema(d: Database) {
       next_review TEXT,
       review_count INTEGER NOT NULL DEFAULT 0,
       correct_count INTEGER NOT NULL DEFAULT 0,
+      confidence INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (question_id) REFERENCES questions(id)
     );
@@ -151,12 +189,37 @@ function createSchema(d: Database) {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+    CREATE TABLE IF NOT EXISTS xp_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track TEXT NOT NULL,
+      date TEXT NOT NULL,             -- ISO timestamp
+      kind TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      question_id INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS badges (
+      id TEXT NOT NULL,
+      track TEXT NOT NULL DEFAULT 'all',
+      icon TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      unlocked_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (id, track)
+    );
+    CREATE TABLE IF NOT EXISTS interview_dates (
+      track TEXT PRIMARY KEY,
+      target_date TEXT NOT NULL,
+      set_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE INDEX IF NOT EXISTS idx_progress_next_review ON progress(next_review);
     CREATE INDEX IF NOT EXISTS idx_progress_status ON progress(status);
     CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions(topic);
+    CREATE INDEX IF NOT EXISTS idx_questions_track ON questions(track);
+    CREATE INDEX IF NOT EXISTS idx_xp_log_track_date ON xp_log(track, date);
   `);
   createCoursesSchema(d);
-  d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`, [
+  // Only stamp the version on a fresh DB. Migrations update it for existing DBs.
+  d.run(`INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', ?)`, [
     String(SCHEMA_VERSION),
   ]);
 }
@@ -255,9 +318,61 @@ function getSchemaVersion(d: Database): number {
 // Idempotent v1 -> v2 migration. Safe to run repeatedly.
 function migrateToV2(d: Database) {
   createCoursesSchema(d);
-  d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`, [
-    String(SCHEMA_VERSION),
-  ]);
+  d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '2')`);
+}
+
+// v2 -> v3 migration: add track/chapter/answer to questions, confidence to progress,
+// new tables xp_log, badges, interview_dates. All additive, safe to re-run.
+function migrateToV3(d: Database) {
+  const cols = (table: string): string[] =>
+    query<{ name: string }>(`PRAGMA table_info(${table})`).map((r) => r.name);
+
+  const qcols = cols("questions");
+  if (!qcols.includes("track")) {
+    d.run(`ALTER TABLE questions ADD COLUMN track TEXT NOT NULL DEFAULT 'dotnet'`);
+  }
+  if (!qcols.includes("chapter")) {
+    d.run(`ALTER TABLE questions ADD COLUMN chapter INTEGER`);
+  }
+  if (!qcols.includes("answer")) {
+    d.run(`ALTER TABLE questions ADD COLUMN answer TEXT NOT NULL DEFAULT ''`);
+  }
+
+  const pcols = cols("progress");
+  if (!pcols.includes("confidence")) {
+    d.run(`ALTER TABLE progress ADD COLUMN confidence INTEGER NOT NULL DEFAULT 0`);
+  }
+
+  d.run(`
+    CREATE TABLE IF NOT EXISTS xp_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track TEXT NOT NULL,
+      date TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      question_id INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS badges (
+      id TEXT NOT NULL,
+      track TEXT NOT NULL DEFAULT 'all',
+      icon TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      unlocked_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (id, track)
+    );
+    CREATE TABLE IF NOT EXISTS interview_dates (
+      track TEXT PRIMARY KEY,
+      target_date TEXT NOT NULL,
+      set_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_questions_track    ON questions(track);
+    CREATE INDEX IF NOT EXISTS idx_xp_log_track_date  ON xp_log(track, date);
+  `);
+
+  // Backfill: any pre-existing question without a track gets 'dotnet'.
+  d.run(`UPDATE questions SET track = 'dotnet' WHERE track IS NULL OR track = ''`);
+  d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '3')`);
 }
 
 function runMigrations(d: Database) {
@@ -265,6 +380,7 @@ function runMigrations(d: Database) {
   // so this is safe even on a fresh DB.
   const current = getSchemaVersion(d);
   if (current < 2) migrateToV2(d);
+  if (current < 3) migrateToV3(d);
 }
 
 interface SeedAccount {
@@ -322,17 +438,50 @@ function seedCourses(d: Database) {
   stmt.free();
 }
 
-function seedQuestions(d: Database) {
-  // Idempotent insert (INSERT OR IGNORE means we never overwrite the seed)
+async function seedQuestions(d: Database): Promise<boolean> {
+  // Fast-path: skip the entire INSERT loop if both tracks are already fully
+  // populated. This avoids ~1030 WASM round-trips on every page load.
+  const dotnetCount = queryOne<{ c: number }>(
+    `SELECT COUNT(*) AS c FROM questions WHERE track = 'dotnet'`
+  )?.c ?? 0;
+  const pentestCount = queryOne<{ c: number }>(
+    `SELECT COUNT(*) AS c FROM questions WHERE track = 'pentest'`
+  )?.c ?? 0;
+
+  const needsDotnet = dotnetCount < QUESTIONS.length;
+  const needsPentest = pentestCount < PENTEST_TARGET;
+  if (!needsDotnet && !needsPentest) return false;
+
   const stmt = d.prepare(
-    `INSERT OR IGNORE INTO questions (id, topic, question, exp, part) VALUES (?, ?, ?, ?, ?)`
+    `INSERT OR IGNORE INTO questions
+       (id, topic, question, exp, part, track, chapter, answer)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
   d.run("BEGIN");
-  for (const q of QUESTIONS) {
-    stmt.run([q.id, q.topic, q.question, q.exp, q.part]);
+  if (needsDotnet) {
+    for (const q of QUESTIONS) {
+      stmt.run([q.id, q.topic, q.question, q.exp, q.part, "dotnet", null, ""]);
+    }
+  }
+  if (needsPentest) {
+    // Lazy import: only fetch the 271KB seed file when we actually need it.
+    const { PENTEST_QUESTIONS } = await import("../data/pentestQuestions");
+    for (const q of PENTEST_QUESTIONS) {
+      stmt.run([
+        q.id,
+        q.topic,
+        q.question,
+        q.exp,
+        q.part,
+        q.track ?? "pentest",
+        q.chapter ?? null,
+        q.answer ?? "",
+      ]);
+    }
   }
   d.run("COMMIT");
   stmt.free();
+  return true;
 }
 
 // ---------- Migration from legacy localStorage ----------
@@ -390,28 +539,62 @@ export async function initDb(): Promise<Database> {
   initPromise = (async () => {
     if (!SQL) SQL = await initSqlJs({ locateFile: () => wasmUrl });
 
-    // Disk file (dev) wins over IndexedDB so the on-disk .db is the source of
-    // truth across browsers / incognito / cleared storage.
+    // Source order:
+    //  1. Dev: /__db/load (writes go back to disk via the vite plugin).
+    //  2. Returning visitor: their IndexedDB snapshot.
+    //  3. Production first-visit: /initial-db.sqlite static asset (deploy-time
+    //     snapshot of the author's progress).
+    //  4. Otherwise: brand-new empty DB.
     const fromDisk = await loadFromDisk();
-    const existing = fromDisk ?? (await loadBinary());
+    const fromIdb = fromDisk ? null : await loadBinary();
+    const fromInitial =
+      !fromDisk && !fromIdb ? await loadInitialBundledDb() : null;
+    const existing = fromDisk ?? fromIdb ?? fromInitial;
 
+    let mutated = false;
+    // Try to open the inherited DB; if the bytes are corrupt or non-SQLite
+    // (e.g. an HTML SPA-fallback we couldn't detect), fall back to fresh
+    // instead of leaving the user stuck on the loader forever.
+    let opened: Database | null = null;
     if (existing && existing.byteLength > 0) {
-      _db = new SQL.Database(existing);
-      createSchema(_db);
+      try {
+        opened = new SQL.Database(existing);
+        // Sanity check that this is actually a SQLite file by hitting the
+        // schema. If sql.js accepted bogus bytes, this will throw.
+        opened.exec("SELECT name FROM sqlite_master LIMIT 1");
+      } catch (e) {
+        console.warn("Existing DB bytes not openable; starting fresh.", e);
+        try { opened?.close(); } catch {}
+        opened = null;
+      }
+    }
+
+    if (opened) {
+      _db = opened;
+      createSchema(_db); // CREATE TABLE IF NOT EXISTS + INSERT OR IGNORE meta
+      const vBefore = getSchemaVersion(_db);
       runMigrations(_db);
-      seedQuestions(_db);
+      const vAfter = getSchemaVersion(_db);
+      const seedWrote = await seedQuestions(_db); // fast-paths when already-seeded
       seedAccounts(_db);
       seedCourses(_db);
+      mutated = vAfter > vBefore || seedWrote;
     } else {
       _db = new SQL.Database();
       createSchema(_db);
       runMigrations(_db);
-      seedQuestions(_db);
+      await seedQuestions(_db);
       seedAccounts(_db);
       seedCourses(_db);
       migrateLocalStorage(_db);
+      mutated = true; // fresh DB always needs to be written out
     }
-    await persistNow();
+
+    if (mutated) {
+      // Schedule rather than await so the UI can render immediately while the
+      // ~1MB IDB write happens in the background.
+      setTimeout(() => { persistNow().catch((e) => console.error("init persist failed:", e)); }, 0);
+    }
     return _db;
   })();
 
@@ -509,7 +692,7 @@ export async function importSqliteFile(file: File): Promise<void> {
   // Make sure schema is intact (in case importing an older DB)
   createSchema(_db);
   runMigrations(_db);
-  seedQuestions(_db);
+  await seedQuestions(_db);
   seedAccounts(_db);
   seedCourses(_db);
   await persistNow();
@@ -537,6 +720,7 @@ export interface ProgressRow {
   next_review: string | null;
   review_count: number;
   correct_count: number;
+  confidence?: number;
 }
 
 export function loadAllProgress(): Record<number, ProgressEntry> {
@@ -553,6 +737,7 @@ export function loadAllProgress(): Record<number, ProgressEntry> {
       nextReview: r.next_review,
       reviewCount: r.review_count,
       correctCount: r.correct_count,
+      confidence: ((r.confidence ?? 0) as ProgressEntry["confidence"]),
     };
   }
   return out;
@@ -569,8 +754,8 @@ export function upsertProgress(id: number, entry: ProgressEntry): void {
   run(
     `INSERT INTO progress
        (question_id, status, notes, ease, interval, repetitions,
-        last_reviewed, next_review, review_count, correct_count, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        last_reviewed, next_review, review_count, correct_count, confidence, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(question_id) DO UPDATE SET
        status         = excluded.status,
        notes          = excluded.notes,
@@ -581,10 +766,12 @@ export function upsertProgress(id: number, entry: ProgressEntry): void {
        next_review    = excluded.next_review,
        review_count   = excluded.review_count,
        correct_count  = excluded.correct_count,
+       confidence     = excluded.confidence,
        updated_at     = excluded.updated_at`,
     [
       id, entry.status, entry.notes, entry.ease, entry.interval, entry.repetitions,
       entry.lastReviewed, entry.nextReview, entry.reviewCount, entry.correctCount,
+      entry.confidence ?? 0,
     ]
   );
 }
@@ -629,6 +816,9 @@ export function dbStats(): { sizeBytes: number; tables: { name: string; rows: nu
     "progress",
     "activity",
     "achievements",
+    "xp_log",
+    "badges",
+    "interview_dates",
     "udemy_accounts",
     "courses",
     "course_sections",
@@ -845,4 +1035,103 @@ export function loadAllAccounts(): UdemyAccount[] {
   return query<UdemyAccountRow>(
     `SELECT * FROM udemy_accounts ORDER BY is_primary DESC, email ASC`
   ).map(rowToAccount);
+}
+
+// ---------- XP / Badges / Interview-date helpers ----------
+interface XpRow {
+  id: number;
+  track: Track;
+  date: string;
+  kind: string;
+  amount: number;
+  question_id: number | null;
+}
+
+export function logXp(track: Track, kind: string, amount: number, questionId: number | null = null): void {
+  run(
+    `INSERT INTO xp_log (track, date, kind, amount, question_id) VALUES (?, ?, ?, ?, ?)`,
+    [track, new Date().toISOString(), kind, amount, questionId]
+  );
+}
+
+export function totalXpForTrack(track: Track): number {
+  const r = queryOne<{ s: number }>(
+    `SELECT COALESCE(SUM(amount), 0) AS s FROM xp_log WHERE track = ?`,
+    [track]
+  );
+  return r?.s ?? 0;
+}
+
+export function loadXpEvents(track: Track, limit = 200): XpEvent[] {
+  return query<XpRow>(
+    `SELECT * FROM xp_log WHERE track = ? ORDER BY id DESC LIMIT ?`,
+    [track, limit]
+  ).map((r) => ({
+    id: r.id,
+    track: r.track,
+    date: r.date,
+    kind: r.kind,
+    amount: r.amount,
+    questionId: r.question_id,
+  }));
+}
+
+interface BadgeRow {
+  id: string;
+  track: Track;
+  icon: string;
+  title: string;
+  body: string;
+  unlocked_at: string;
+}
+
+export function loadBadges(track?: Track): Badge[] {
+  const rows = track
+    ? query<BadgeRow>(
+        `SELECT * FROM badges WHERE track = ? OR track = 'all' ORDER BY unlocked_at DESC`,
+        [track]
+      )
+    : query<BadgeRow>(`SELECT * FROM badges ORDER BY unlocked_at DESC`);
+  return rows.map((r) => ({
+    id: r.id,
+    track: r.track,
+    icon: r.icon,
+    title: r.title,
+    body: r.body,
+    unlockedAt: r.unlocked_at,
+  }));
+}
+
+export function unlockBadge(b: Omit<Badge, "unlockedAt">): boolean {
+  // Returns true if this is a fresh unlock.
+  const existing = queryOne<{ c: number }>(
+    `SELECT COUNT(*) AS c FROM badges WHERE id = ? AND track = ?`,
+    [b.id, b.track]
+  );
+  if ((existing?.c ?? 0) > 0) return false;
+  run(
+    `INSERT OR IGNORE INTO badges (id, track, icon, title, body) VALUES (?, ?, ?, ?, ?)`,
+    [b.id, b.track, b.icon, b.title, b.body]
+  );
+  return true;
+}
+
+export function getInterviewDate(track: Track): InterviewDate | null {
+  const r = queryOne<{ track: Track; target_date: string; set_at: string }>(
+    `SELECT * FROM interview_dates WHERE track = ?`,
+    [track]
+  );
+  return r ? { track: r.track, date: r.target_date, setAt: r.set_at } : null;
+}
+
+export function setInterviewDate(track: Track, date: string | null): void {
+  if (!date) {
+    run(`DELETE FROM interview_dates WHERE track = ?`, [track]);
+    return;
+  }
+  run(
+    `INSERT INTO interview_dates (track, target_date, set_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(track) DO UPDATE SET target_date = excluded.target_date, set_at = excluded.set_at`,
+    [track, date]
+  );
 }

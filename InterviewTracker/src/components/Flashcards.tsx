@@ -1,34 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AppState, Rating } from "../types";
-import { QUESTIONS } from "../data/questions";
+import type { AppState, Confidence, Question, Rating, Track } from "../types";
 import { defaultProgress, isDue, applyRating } from "../lib/sm2";
+import ConfidenceDots from "./ConfidenceDots";
 
 interface FlashcardsProps {
   state: AppState;
   rate: (id: number, r: Rating) => void;
+  setConfidence: (id: number, c: Confidence) => void;
   mode: "all" | "review";
+  questions: Question[];
+  track: Track;
 }
 
-export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
+export default function Flashcards({ state, rate, setConfidence, mode, questions, track }: FlashcardsProps) {
   const queue = useMemo(() => {
     if (mode === "review") {
       const now = new Date();
-      return QUESTIONS.filter(q => isDue(state.progress[q.id], now));
+      return questions.filter((q) => isDue(state.progress[q.id], now));
     }
-    const arr = [...QUESTIONS];
+    const arr = [...questions];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, questions]);
 
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
 
-  useEffect(() => { setIdx(0); setFlipped(false); }, [queue]);
+  useEffect(() => { setIdx(0); setFlipped(false); setShowAnswer(false); }, [queue, track]);
 
   const current = queue[idx];
   const progress = current ? (state.progress[current.id] ?? defaultProgress()) : null;
@@ -37,9 +41,10 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
     if (!current) return;
     rate(current.id, r);
     setFlipped(false);
-    setTimeout(() => setIdx(i => i + 1), 250);
+    setShowAnswer(false);
+    setTimeout(() => setIdx((i) => i + 1), 250);
   };
-  const skip = () => { setFlipped(false); setTimeout(() => setIdx(i => i + 1), 100); };
+  const skip = () => { setFlipped(false); setShowAnswer(false); setTimeout(() => setIdx((i) => i + 1), 100); };
   const previewInterval = (r: Rating): string => {
     if (!progress) return "";
     const next = applyRating(progress, r);
@@ -50,14 +55,15 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
-      if (e.key === " " || e.key === "Enter") { e.preventDefault(); setFlipped(f => !f); }
+      if (e.key === " " || e.key === "Enter") { e.preventDefault(); setFlipped((f) => !f); }
       else if (flipped) {
         if (e.key === "1") onRate("again");
         else if (e.key === "2") onRate("hard");
         else if (e.key === "3") onRate("good");
         else if (e.key === "4") onRate("easy");
       } else if (e.key === "ArrowRight") skip();
-      else if (e.key === "f" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setFocus(f => !f); }
+      else if (e.key === "a") setShowAnswer((s) => !s);
+      else if (e.key === "f" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setFocus((f) => !f); }
       else if (e.key === "Escape" && focus) setFocus(false);
     };
     window.addEventListener("keydown", onKey);
@@ -87,7 +93,7 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
         <div style={{ marginBottom: 16 }}>
           You went through {queue.length} card{queue.length === 1 ? "" : "s"}. Great work.
         </div>
-        <button className="primary" onClick={() => { setIdx(0); setFlipped(false); }}>
+        <button className="primary" onClick={() => { setIdx(0); setFlipped(false); setShowAnswer(false); }}>
           Start over
         </button>
       </div>
@@ -99,12 +105,13 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
   return (
     <div className={`flashcard-view ${focus ? "focus" : ""}`}>
       <div className="flashcard-progress">
-        <span>{mode === "review" ? "Review" : "Study"} · {idx + 1}/{queue.length}</span>
+        <span>{mode === "review" ? "Review" : "Study"} · {idx + 1}/{queue.length} · {track === "pentest" ? "🛡️ Pentest" : "🟦 .NET"}</span>
         <div className="progress-mini"><div className="fill" style={{ width: `${progressPct}%` }} /></div>
         <div className="row" style={{ gap: 6 }}>
           <span><span className="kbd">Space</span> flip</span>
+          <span><span className="kbd">A</span> answer</span>
           <span><span className="kbd">→</span> skip</span>
-          <button className="ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => setFocus(f => !f)} title="Focus / Zen mode (⌘F)">
+          <button className="ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => setFocus((f) => !f)} title="Focus / Zen mode (⌘F)">
             {focus ? "Exit focus" : "Focus mode"}
           </button>
         </div>
@@ -113,7 +120,7 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
       {current && (
         <div
           className={`flashcard-3d ${flipped ? "flipped" : ""}`}
-          onClick={() => setFlipped(f => !f)}
+          onClick={() => setFlipped((f) => !f)}
           style={{ cursor: "pointer" }}
         >
           <div className="flashcard-face front">
@@ -121,6 +128,9 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
             <div className="question">{current.question}</div>
             <div style={{ textAlign: "center", color: "var(--text-3)", fontSize: 12, marginTop: 12 }}>
               Click card or press <span className="kbd">Space</span> to reveal your answer
+              {current.answer && (
+                <> · press <span className="kbd">A</span> for the suggested answer</>
+              )}
             </div>
           </div>
           <div className="flashcard-face back">
@@ -131,6 +141,12 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
                 ? progress.notes
                 : <span className="notes-empty">No notes yet — open Browse tab to add your own answer for this question.</span>}
             </div>
+            {current.answer && (
+              <details className="suggested-answer" open={showAnswer} onToggle={(e) => setShowAnswer((e.target as HTMLDetailsElement).open)} onClick={(e) => e.stopPropagation()}>
+                <summary><strong>Suggested answer</strong></summary>
+                <div className="sa-body">{current.answer}</div>
+              </details>
+            )}
           </div>
         </div>
       )}
@@ -143,24 +159,36 @@ export default function Flashcards({ state, rate, mode }: FlashcardsProps) {
           <button onClick={skip} style={{ padding: "0 18px" }}>Skip →</button>
         </div>
       ) : (
-        <div className="rate-row">
-          <button className="danger" onClick={() => onRate("again")}>
-            <span>Again</span>
-            <span className="interval">{previewInterval("again")}</span>
-          </button>
-          <button className="warn" onClick={() => onRate("hard")}>
-            <span>Hard</span>
-            <span className="interval">{previewInterval("hard")}</span>
-          </button>
-          <button className="primary" onClick={() => onRate("good")}>
-            <span>Good</span>
-            <span className="interval">{previewInterval("good")}</span>
-          </button>
-          <button className="success" onClick={() => onRate("easy")}>
-            <span>Easy</span>
-            <span className="interval">{previewInterval("easy")}</span>
-          </button>
-        </div>
+        <>
+          <div className="rate-row">
+            <button className="danger" onClick={() => onRate("again")}>
+              <span>Again</span>
+              <span className="interval">{previewInterval("again")}</span>
+            </button>
+            <button className="warn" onClick={() => onRate("hard")}>
+              <span>Hard</span>
+              <span className="interval">{previewInterval("hard")}</span>
+            </button>
+            <button className="primary" onClick={() => onRate("good")}>
+              <span>Good</span>
+              <span className="interval">{previewInterval("good")}</span>
+            </button>
+            <button className="success" onClick={() => onRate("easy")}>
+              <span>Easy</span>
+              <span className="interval">{previewInterval("easy")}</span>
+            </button>
+          </div>
+          {current && (
+            <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 10 }}>
+              <ConfidenceDots
+                value={(progress?.confidence ?? 0) as Confidence}
+                onChange={(c) => setConfidence(current.id, c)}
+                size="sm"
+                label="How confident did you feel?"
+              />
+            </div>
+          )}
+        </>
       )}
 
       <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 6, textAlign: "center" }}>

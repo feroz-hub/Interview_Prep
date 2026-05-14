@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { View } from "./types";
+import type { View, Question, Badge } from "./types";
 import { QUESTIONS } from "./data/questions";
+// Pentest data is dynamically imported on first track-switch — see effect below.
+const PENTEST_COUNT = 500;
 import { useProgress } from "./hooks/useProgress";
 import { useCourses } from "./hooks/useCourses";
 import { useAccounts } from "./hooks/useAccounts";
 import { useTheme } from "./hooks/useTheme";
 import { usePomodoro } from "./hooks/usePomodoro";
 import { useToasts } from "./hooks/useToasts";
+import { useTrack } from "./hooks/useTrack";
 import Dashboard from "./components/Dashboard";
 import Browse from "./components/Browse";
 import Flashcards from "./components/Flashcards";
@@ -19,10 +22,14 @@ import ToastHost from "./components/ToastHost";
 import ThemeSwitcher from "./components/ThemeSwitcher";
 import Pomodoro from "./components/Pomodoro";
 import LoadingScreen from "./components/LoadingScreen";
+import TrackSwitcher from "./components/TrackSwitcher";
+import XPBar from "./components/XPBar";
 import { isDue } from "./lib/sm2";
 import type { Achievement } from "./lib/achievements";
 import { detectCourseAchievements } from "./lib/achievements";
-import { getMeta, setMeta } from "./lib/db";
+import { getMeta, setMeta, loadBadges } from "./lib/db";
+import { getTrackXp } from "./lib/xp";
+import { detectAndUnlockBadges } from "./lib/pentestBadges";
 
 export default function App() {
   const [view, setView] = useState<View>("dashboard");
@@ -40,9 +47,73 @@ export default function App() {
     pushToast({ icon: a.icon, title: a.title, body: a.body });
   };
 
-  const progress = useProgress(onAchievement);
+  // Active track is loaded after the DB is ready (initial value 'dotnet').
+  // Build the active question list reactively.
+  const [trackReady, setTrackReady] = useState(false);
+  const { track, setTrack } = useTrack(trackReady);
+
+  // Lazy-loaded pentest question set. Stays null until the user actually opens
+  // the Pentest track, then is cached for the rest of the session.
+  const [pentestQuestions, setPentestQuestions] = useState<Question[] | null>(null);
+  const [pentestLoading, setPentestLoading] = useState(false);
+
+  useEffect(() => {
+    if (track !== "pentest" || pentestQuestions || pentestLoading) return;
+    setPentestLoading(true);
+    import("./data/pentestQuestions").then((mod) => {
+      setPentestQuestions(mod.PENTEST_QUESTIONS);
+      setPentestLoading(false);
+    });
+  }, [track, pentestQuestions, pentestLoading]);
+
+  const activeQuestions: Question[] = useMemo(() => {
+    if (track === "pentest") return pentestQuestions ?? [];
+    return QUESTIONS;
+  }, [track, pentestQuestions]);
+
+  const progress = useProgress(activeQuestions, onAchievement);
   const courses = useCourses();
   const accountsApi = useAccounts();
+
+  // Once the DB is ready, allow the track hook to read its persisted value.
+  useEffect(() => {
+    if (progress.ready) setTrackReady(true);
+  }, [progress.ready]);
+
+  // XP + badges (recomputed when progress changes)
+  const [xp, setXp] = useState(0);
+  const [badges, setBadges] = useState<Badge[]>([]);
+
+  useEffect(() => {
+    if (!progress.ready) return;
+    setXp(getTrackXp(track));
+    setBadges(loadBadges(track));
+  }, [progress.ready, progress.state, track]);
+
+  // Detect new badges after each progress update
+  useEffect(() => {
+    if (!progress.ready) return;
+    // Compute current streak quickly
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      if (progress.state.activity[key] && progress.state.activity[key].reviews > 0) streak += 1;
+      else if (i > 0) break;
+    }
+    const fresh = detectAndUnlockBadges(track, {
+      questions: activeQuestions,
+      state: progress.state,
+      totalXp: getTrackXp(track),
+      streak,
+    });
+    for (const b of fresh) {
+      pushToast({ icon: b.icon, title: `Badge unlocked: ${b.title}`, body: b.body });
+    }
+    if (fresh.length > 0) setBadges(loadBadges(track));
+  }, [progress.state, progress.ready, track, activeQuestions, pushToast]);
 
   // Restore last opened course id from meta.
   useEffect(() => {
@@ -89,8 +160,8 @@ export default function App() {
   const dueCount = useMemo(() => {
     if (!progress.ready) return 0;
     const now = new Date();
-    return QUESTIONS.filter((q) => isDue(progress.state.progress[q.id], now)).length;
-  }, [progress.state, progress.ready]);
+    return activeQuestions.filter((q) => isDue(progress.state.progress[q.id], now)).length;
+  }, [progress.state, progress.ready, activeQuestions]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -116,10 +187,14 @@ export default function App() {
         }
       }
       else if (e.key === "6") setView("accounts");
+      else if (e.key === "t" && e.shiftKey) {
+        // Shift+T toggles between tracks
+        setTrack(track === "pentest" ? "dotnet" : "pentest");
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeCourseId]);
+  }, [activeCourseId, track, setTrack]);
 
   const onPaletteSelect = (sel:
     | { kind: "question"; id: number }
@@ -160,21 +235,60 @@ export default function App() {
     );
   }
 
+  // If DB init blew up, show the error rather than a stuck loader.
+  if (progress.initError) {
+    return (
+      <>
+        <div className="mesh-bg" />
+        <div className="empty" style={{ maxWidth: 560, margin: "10vh auto" }}>
+          <div className="icon">⚠️</div>
+          <h3>Couldn't initialize the local database</h3>
+          <div style={{ marginBottom: 16 }}>
+            <code style={{ wordBreak: "break-word" }}>{progress.initError.message}</code>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 16 }}>
+            Open DevTools → Console for the full stack trace. You can also reset
+            the local DB and try again.
+          </div>
+          <button className="primary" onClick={() => progress.reset()}>Reset local DB</button>
+        </div>
+      </>
+    );
+  }
+
+  // Pentest data is still being fetched on the first switch — show loader briefly.
+  if (track === "pentest" && !pentestQuestions) {
+    return (
+      <>
+        <div className="mesh-bg" />
+        <LoadingScreen />
+      </>
+    );
+  }
+
   const activeCourse = activeCourseId ? courses.getCourseById(activeCourseId) : undefined;
+  const trackName = track === "pentest" ? "Pentest Interview Tracker" : ".NET Interview Tracker";
+  const trackBrandIcon = track === "pentest" ? "🛡️" : "🎯";
 
   return (
     <>
       <div className="mesh-bg" />
-      <div className="app">
+      <div className="app" data-track={track}>
         <header className="topbar">
           <div className="brand">
-            <div className="brand-icon">🎯</div>
+            <div className="brand-icon">{trackBrandIcon}</div>
             <div>
-              <h1>.NET Interview Tracker</h1>
+              <h1>{trackName}</h1>
               <div className="sub">
-                {QUESTIONS.length} questions · {courses.courses.length} courses · {accountsApi.accounts.length} accounts
+                {activeQuestions.length} questions · {courses.courses.length} courses · {accountsApi.accounts.length} accounts
               </div>
             </div>
+            <TrackSwitcher
+              value={track}
+              onChange={setTrack}
+              dotnetCount={QUESTIONS.length}
+              pentestCount={PENTEST_COUNT}
+            />
           </div>
 
           <nav>
@@ -199,6 +313,7 @@ export default function App() {
           </nav>
 
           <div className="actions">
+            <div className="xp-bar-wrap"><XPBar xp={xp} track={track} /></div>
             <button
               className={`ghost ${view === "accounts" ? "active" : ""}`}
               onClick={() => setView("accounts")}
@@ -268,22 +383,43 @@ export default function App() {
               udemyAccounts={accountsApi.accounts}
               onJumpToCourse={openCourse}
               onJumpToAccount={jumpToCoursesForAccount}
+              activeQuestions={activeQuestions}
+              activeTrack={track}
+              xp={xp}
+              badges={badges}
             />
           )}
           {view === "browse" && (
             <Browse
               state={progress.state}
-              setStatus={progress.setStatus}
+              setStatus={(id, status) => progress.setStatus(id, status, track)}
               setNotes={progress.setNotes}
+              setConfidence={(id, c) => progress.setConfidence(id, c, track)}
               forcedTopic={forcedTopic}
               forcedQuestionId={forcedQuestionId}
+              questions={activeQuestions}
+              track={track}
             />
           )}
           {view === "flashcards" && (
-            <Flashcards state={progress.state} rate={progress.rate} mode="all" />
+            <Flashcards
+              state={progress.state}
+              rate={(id, r) => progress.rate(id, r, track)}
+              setConfidence={(id, c) => progress.setConfidence(id, c, track)}
+              mode="all"
+              questions={activeQuestions}
+              track={track}
+            />
           )}
           {view === "review" && (
-            <Flashcards state={progress.state} rate={progress.rate} mode="review" />
+            <Flashcards
+              state={progress.state}
+              rate={(id, r) => progress.rate(id, r, track)}
+              setConfidence={(id, c) => progress.setConfidence(id, c, track)}
+              mode="review"
+              questions={activeQuestions}
+              track={track}
+            />
           )}
           {view === "courses" && (
             <CoursesList
@@ -352,6 +488,7 @@ export default function App() {
         onSelect={onPaletteSelect}
         courses={courses.courses}
         accounts={accountsApi.accounts}
+        questions={activeQuestions}
       />
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
     </>
