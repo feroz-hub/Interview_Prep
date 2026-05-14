@@ -1,10 +1,26 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles.css";
+import "./styles/index.css";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const root = ReactDOM.createRoot(document.getElementById("root")!);
+
+// DEV-only primitives playground. Reach it at /?_play=1 on localhost.
+// In production builds the entire branch is dead-stripped and the
+// playground module is never bundled.
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("_play")) {
+  void import("./components/_primitives/__playground").then((mod) => {
+    const Playground = mod.default;
+    root.render(
+      <React.StrictMode>
+        <Playground />
+      </React.StrictMode>
+    );
+  });
+} else {
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}

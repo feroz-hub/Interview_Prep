@@ -1,0 +1,169 @@
+/* ============================================================
+   Design tokens.
+   Phase 2 PR-2 — mobile-first refactor.
+
+   Imported first via styles/index.css. Components rely on these
+   CSS custom properties; never hardcode colour / spacing / radius.
+   ============================================================ */
+
+/* ---- Colour palettes (themes) ---- */
+:root, [data-theme="midnight"] {
+  --bg-0: #07090f;
+  --bg-1: rgba(20, 25, 38, 0.55);
+  --bg-2: rgba(28, 34, 50, 0.65);
+  --bg-3: rgba(40, 48, 68, 0.7);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hi: rgba(255, 255, 255, 0.16);
+  --text: #e9eef7;
+  --text-2: #a4afc2;
+  --text-3: #6b7488;
+  --accent: #6ea8ff;
+  --accent-2: #b388ff;
+  --accent-glow: rgba(110, 168, 255, 0.5);
+  --green: #5ef0a3;
+  --yellow: #ffd166;
+  --red: #ff7a90;
+  --mesh-1: #5b21b6;
+  --mesh-2: #1d4ed8;
+  --mesh-3: #db2777;
+  --mesh-4: #0ea5e9;
+}
+
+[data-theme="aurora"] {
+  --bg-0: #050a14;
+  --bg-1: rgba(15, 30, 50, 0.55);
+  --bg-2: rgba(20, 40, 65, 0.65);
+  --bg-3: rgba(30, 55, 85, 0.7);
+  --border: rgba(140, 230, 200, 0.12);
+  --border-hi: rgba(140, 230, 200, 0.25);
+  --text: #e6fff5;
+  --text-2: #a0c4b9;
+  --text-3: #6c8a82;
+  --accent: #4dffba;
+  --accent-2: #4d8fff;
+  --accent-glow: rgba(77, 255, 186, 0.45);
+  --green: #57f3a0;
+  --yellow: #ffe066;
+  --red: #ff7a7a;
+  --mesh-1: #064e3b;
+  --mesh-2: #1e3a8a;
+  --mesh-3: #06b6d4;
+  --mesh-4: #10b981;
+}
+
+[data-theme="sunset"] {
+  --bg-0: #150711;
+  --bg-1: rgba(40, 18, 32, 0.55);
+  --bg-2: rgba(55, 25, 42, 0.65);
+  --bg-3: rgba(75, 35, 55, 0.7);
+  --border: rgba(255, 180, 140, 0.12);
+  --border-hi: rgba(255, 180, 140, 0.25);
+  --text: #ffeede;
+  --text-2: #d8b8a8;
+  --text-3: #8c6e60;
+  --accent: #ff9a55;
+  --accent-2: #ff5c8a;
+  --accent-glow: rgba(255, 154, 85, 0.5);
+  --green: #ffd066;
+  --yellow: #ffb347;
+  --red: #ff5577;
+  --mesh-1: #7c2d12;
+  --mesh-2: #be185d;
+  --mesh-3: #f59e0b;
+  --mesh-4: #b91c1c;
+}
+
+[data-theme="mint"] {
+  --bg-0: #f5f9f7;
+  --bg-1: rgba(255, 255, 255, 0.7);
+  --bg-2: rgba(255, 255, 255, 0.85);
+  --bg-3: rgba(240, 248, 244, 0.95);
+  --border: rgba(20, 100, 80, 0.12);
+  --border-hi: rgba(20, 100, 80, 0.25);
+  --text: #0f1f1a;
+  --text-2: #4a5e58;
+  --text-3: #8a9e98;
+  --accent: #14a085;
+  --accent-2: #6366f1;
+  --accent-glow: rgba(20, 160, 133, 0.35);
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --mesh-1: #a7f3d0;
+  --mesh-2: #c7d2fe;
+  --mesh-3: #fde68a;
+  --mesh-4: #bae6fd;
+}
+
+/* ---- Track palette overrides (.NET vs Pentest) ---- */
+[data-track="pentest"] {
+  --accent: #ff5577;
+  --accent-2: #ff9a55;
+  --accent-glow: rgba(255, 85, 119, 0.45);
+  --mesh-1: #7c1d1d;
+  --mesh-2: #831843;
+  --mesh-3: #b91c1c;
+  --mesh-4: #1e1b4b;
+}
+
+/* ============================================================
+   Mobile-first additions
+   ============================================================ */
+
+:root {
+  /* Breakpoints (em). CSS @media rules cannot interpolate var(); use
+     these constants as documentation. Literal values are used inline. */
+  --bp-sm: 40em;   /* 640 px */
+  --bp-md: 48em;   /* 768 px */
+  --bp-lg: 64em;   /* 1024 px */
+  --bp-xl: 80em;   /* 1280 px */
+
+  /* Spacing scale. 4 px base, 1.5x rhythm. Inline padding / gap. */
+  --space-2xs: 0.125rem; /* 2  */
+  --space-xs:  0.25rem;  /* 4  */
+  --space-sm:  0.5rem;   /* 8  */
+  --space-md:  0.75rem;  /* 12 */
+  --space-lg:  1rem;     /* 16 */
+  --space-xl:  1.5rem;   /* 24 */
+  --space-2xl: 2rem;     /* 32 */
+  --space-3xl: 3rem;     /* 48 */
+
+  /* Fluid typography. Scales 360 ↔ 1440 px viewports. */
+  --font-xs:   clamp(0.75rem,   0.700rem + 0.25vw, 0.8125rem);
+  --font-sm:   clamp(0.8125rem, 0.780rem + 0.30vw, 0.9375rem);
+  --font-base: clamp(0.9375rem, 0.900rem + 0.40vw, 1.0625rem);
+  --font-md:   clamp(1.000rem,  0.940rem + 0.60vw, 1.2500rem);
+  --font-lg:   clamp(1.125rem,  1.000rem + 1.00vw, 1.5000rem);
+  --font-xl:   clamp(1.375rem,  1.200rem + 1.50vw, 2.0000rem);
+  --font-2xl:  clamp(1.750rem,  1.400rem + 2.50vw, 3.0000rem);
+
+  --lh-tight:   1.20;
+  --lh-snug:    1.35;
+  --lh-base:    1.50;
+  --lh-relaxed: 1.65;
+
+  /* Control sizing. Touch-target floor = 44 px (WCAG 2.5.5). */
+  --control-h-sm: 2.50rem;  /* 40 px — desktop dense only */
+  --control-h:    2.75rem;  /* 44 px — mobile default */
+  --control-h-lg: 3.25rem;  /* 52 px — primary CTA */
+
+  /* Easings. */
+  --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:  cubic-bezier(0.7, 0, 0.84, 0);
+
+  /* Radii. */
+  --radius-sm:   6px;
+  --radius-md:   9px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* Z-index scale. */
+  --z-base:    0;
+  --z-elev:    1;
+  --z-sticky:  10;
+  --z-overlay: 50;
+  --z-modal:   100;
+  --z-toast:   200;
+}

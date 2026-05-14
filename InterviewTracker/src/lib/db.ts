@@ -321,9 +321,11 @@ function migrateToV2(d: Database) {
   d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '2')`);
 }
 
-// v2 -> v3 migration: add track/chapter/answer to questions, confidence to progress,
-// new tables xp_log, badges, interview_dates. All additive, safe to re-run.
-function migrateToV3(d: Database) {
+// Idempotent shape enforcement. Runs on every init regardless of the recorded
+// schema_version — it only adds what's missing. This is the recovery path for
+// DBs where the version got stamped but the column-add never actually ran
+// (a pre-existing INSERT-OR-REPLACE bug shipped one such broken state).
+function ensureSchemaShape(d: Database) {
   const cols = (table: string): string[] =>
     query<{ name: string }>(`PRAGMA table_info(${table})`).map((r) => r.name);
 
@@ -372,15 +374,18 @@ function migrateToV3(d: Database) {
 
   // Backfill: any pre-existing question without a track gets 'dotnet'.
   d.run(`UPDATE questions SET track = 'dotnet' WHERE track IS NULL OR track = ''`);
-  d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '3')`);
 }
 
 function runMigrations(d: Database) {
-  // meta table is part of v1; createSchema also runs CREATE IF NOT EXISTS first,
-  // so this is safe even on a fresh DB.
+  // Always run idempotent shape enforcement so a broken/half-migrated DB self-heals.
+  // The version-based blocks below are retained for any future *destructive* migrations
+  // that should only run once (none for v2/v3, which are purely additive).
+  ensureSchemaShape(d);
   const current = getSchemaVersion(d);
   if (current < 2) migrateToV2(d);
-  if (current < 3) migrateToV3(d);
+  if (current < 3) {
+    d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '3')`);
+  }
 }
 
 interface SeedAccount {
@@ -465,18 +470,30 @@ async function seedQuestions(d: Database): Promise<boolean> {
   }
   if (needsPentest) {
     // Lazy import: only fetch the 271KB seed file when we actually need it.
-    const { PENTEST_QUESTIONS } = await import("../data/pentestQuestions");
-    for (const q of PENTEST_QUESTIONS) {
-      stmt.run([
-        q.id,
-        q.topic,
-        q.question,
-        q.exp,
-        q.part,
-        q.track ?? "pentest",
-        q.chapter ?? null,
-        q.answer ?? "",
+    // If the chunk fails to load (network, CDN cache, etc.), fall through to
+    // a .NET-only state rather than hanging the entire app on init. A 10s
+    // race-timeout prevents an indefinitely-pending fetch from blocking.
+    try {
+      const mod = await Promise.race([
+        import("../data/pentestQuestions"),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("pentest chunk timeout")), 10_000)
+        ),
       ]);
+      for (const q of mod.PENTEST_QUESTIONS) {
+        stmt.run([
+          q.id,
+          q.topic,
+          q.question,
+          q.exp,
+          q.part,
+          q.track ?? "pentest",
+          q.chapter ?? null,
+          q.answer ?? "",
+        ]);
+      }
+    } catch (e) {
+      console.error("Pentest seed skipped (chunk load failed):", e);
     }
   }
   d.run("COMMIT");
@@ -536,7 +553,25 @@ export async function initDb(): Promise<Database> {
   if (_db) return _db;
   if (initPromise) return initPromise;
 
-  initPromise = (async () => {
+  // Master timeout so the LoadingScreen can never sit forever. If anything in
+  // initDb takes longer than this, we reject and the App.tsx error UI shows.
+  const INIT_TIMEOUT_MS = 20_000;
+
+  initPromise = Promise.race([
+    initDbInner(),
+    new Promise<Database>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`DB init timed out after ${INIT_TIMEOUT_MS / 1000}s. Check Console + Network for the slow request.`)),
+        INIT_TIMEOUT_MS
+      )
+    ),
+  ]);
+
+  return initPromise;
+}
+
+async function initDbInner(): Promise<Database> {
+  return (async () => {
     if (!SQL) SQL = await initSqlJs({ locateFile: () => wasmUrl });
 
     // Source order:
@@ -597,8 +632,6 @@ export async function initDb(): Promise<Database> {
     }
     return _db;
   })();
-
-  return initPromise;
 }
 
 export function db(): Database {

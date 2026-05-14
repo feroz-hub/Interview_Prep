@@ -42,7 +42,13 @@ export function useAccounts(): UseAccountsApi {
         setAccounts(loadAllAccounts());
         setReady(true);
       })
-      .catch((e) => console.error("useAccounts init failed:", e));
+      .catch((e) => {
+        console.error("useAccounts init failed:", e);
+        if (cancelled) return;
+        // Still flip ready so the app can render its error state instead of
+        // hanging on the LoadingScreen forever.
+        setReady(true);
+      });
     return () => {
       cancelled = true;
     };

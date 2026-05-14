@@ -111,7 +111,13 @@ export function useCourses(onAchievement?: (id: string) => void): UseCoursesApi 
         setSessions(loadAllSessions());
         setReady(true);
       })
-      .catch((e) => console.error("useCourses init failed:", e));
+      .catch((e) => {
+        console.error("useCourses init failed:", e);
+        if (cancelled) return;
+        // Still flip ready so the app can render its error state instead of
+        // hanging on the LoadingScreen forever.
+        setReady(true);
+      });
     return () => {
       cancelled = true;
     };

@@ -74,7 +74,8 @@ export type View =
   | "review"
   | "courses"
   | "course-detail"
-  | "accounts";
+  | "accounts"
+  | "library";
 
 export type Rating = "again" | "hard" | "good" | "easy";
 

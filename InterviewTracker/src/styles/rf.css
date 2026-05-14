@@ -1,0 +1,493 @@
+/* ============================================================
+   RF component styles.
+   Loaded last so the new mobile UI wins specificity battles
+   against the legacy component CSS.
+   ============================================================ */
+
+/* ---- Mobile-only scope: any rf-* class only activates < md. ---- */
+@media (min-width: 48em) {
+  .rf-only-mobile { display: none !important; }
+}
+@media (max-width: 47.9375em) {
+  .rf-only-desktop { display: none !important; }
+}
+
+/* ---- Screen / page shell ---- */
+.rf-screen {
+  min-height: 100dvh;
+  background: var(--rf-bg);
+  color: var(--rf-ink);
+  font-family: var(--rf-font-display);
+  font-feature-settings: "ss01", "cv11", "tnum"; /* Inter optical + tabular */
+  padding-top: env(safe-area-inset-top, 0);
+  /* Bottom padding clears the fixed tab bar + safe-area. */
+  padding-bottom: calc(var(--rf-tab) + env(safe-area-inset-bottom, 0) + var(--rf-space-4));
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.rf-page {
+  width: 100%;
+  max-width: 100vw;
+  padding-inline: var(--rf-pad-page);
+  padding-block-start: var(--rf-space-5);
+}
+
+/* ---- Section: vertical rhythm wrapper ---- */
+.rf-section { display: flex; flex-direction: column; }
+.rf-section.gap-3 { gap: var(--rf-space-3); }
+.rf-section.gap-4 { gap: var(--rf-space-4); }
+.rf-section.gap-5 { gap: var(--rf-space-5); }
+.rf-section.gap-6 { gap: var(--rf-space-6); }
+
+/* ---- Card: flat, 1px hairline, no blur, no shadow ---- */
+.rf-card {
+  position: relative;
+  background: var(--rf-bg-elev);
+  border: 1px solid var(--rf-border-subtle);
+  border-radius: var(--rf-radius);
+  padding: clamp(20px, 5vw, 28px);
+  width: 100%;
+  max-width: 100%;
+}
+.rf-card.highlight { border-color: var(--rf-border); }
+.rf-card.accent-leading {
+  /* Left edge accent (used by streak card). */
+  border-left: 0;
+  padding-inline-start: clamp(24px, 6vw, 32px);
+}
+
+/* ---- Mono metadata captions ---- */
+.rf-label {
+  font-family: var(--rf-font-mono);
+  font-size: var(--rf-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--rf-track-wide);
+  color: var(--rf-ink-2);
+  font-weight: 500;
+}
+.rf-mono { font-family: var(--rf-font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---- Hero numbers ---- */
+.rf-hero {
+  font-family: var(--rf-font-display);
+  font-weight: 900;
+  letter-spacing: var(--rf-track-tight);
+  font-variant-numeric: tabular-nums;
+  line-height: 0.95;
+  color: var(--rf-ink);
+}
+.rf-hero.xl { font-size: var(--rf-hero-xl); }
+.rf-hero.lg { font-size: var(--rf-hero-lg); }
+.rf-hero.md { font-size: var(--rf-hero-md); }
+
+.rf-hero-suffix {
+  font-family: var(--rf-font-mono);
+  font-size: clamp(14px, 3.5vw, 18px);
+  color: var(--rf-ink-3);
+  font-weight: 500;
+  align-self: flex-end;
+  margin-bottom: clamp(8px, 2vw, 16px);
+  margin-inline-start: 8px;
+}
+
+/* ---- Card heading + subhead ---- */
+.rf-card-heading {
+  font-size: var(--rf-text-display-1);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: var(--rf-track-tight);
+  color: var(--rf-ink);
+}
+.rf-card-subhead {
+  font-size: var(--rf-text-sm);
+  line-height: 1.4;
+  color: var(--rf-ink-2);
+}
+
+/* ---- Native inputs (flat, hairline, mono digits) ---- */
+.rf-input {
+  width: 100%;
+  height: var(--rf-control-lg);
+  padding: 0 var(--rf-space-4);
+  background: transparent;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  color: var(--rf-ink);
+  font-family: var(--rf-font-mono);
+  font-size: 15px;
+  letter-spacing: var(--rf-track-normal);
+  outline: none;
+  transition: border-color 160ms var(--rf-ease-out), background 160ms var(--rf-ease-out);
+}
+.rf-input:focus-visible { border-color: var(--rf-accent); background: var(--rf-bg-press); }
+.rf-input::-webkit-date-and-time-value { text-align: left; font-family: var(--rf-font-mono); }
+.rf-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+  width: 24px; height: 24px;
+}
+
+/* ---- CTA button (solid, no gradient, 1px inner top-highlight) ---- */
+.rf-cta {
+  position: relative;
+  width: 100%;
+  min-height: var(--rf-control-lg);
+  padding: 0 var(--rf-space-5);
+  background: var(--rf-accent);
+  color: var(--rf-ink-on-accent);
+  border: none;
+  border-radius: var(--rf-radius-sm);
+  font-family: var(--rf-font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms var(--rf-ease-out), transform 200ms var(--rf-spring-quick);
+  overflow: hidden;
+}
+.rf-cta::before {
+  /* 1-px inner top highlight for material feel. */
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+.rf-cta:hover { background: var(--rf-accent-press); }
+.rf-cta:active { transform: scale(0.98); }
+.rf-cta:focus-visible { outline: 2px solid var(--rf-accent); outline-offset: 3px; }
+.rf-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rf-ghost-btn {
+  min-height: var(--rf-control);
+  padding: 0 var(--rf-space-4);
+  background: transparent;
+  color: var(--rf-ink-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  font-family: var(--rf-font-display);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.rf-ghost-btn:hover { color: var(--rf-ink); background: var(--rf-bg-press); }
+
+/* ---- Segmented progress strip (one DOM node, two background layers). ---- */
+.rf-progress-strip {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--rf-state-unseen);
+}
+.rf-progress-strip .fill-mastered,
+.rf-progress-strip .fill-started {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 0;
+  border-radius: 2px;
+  transition: width 600ms var(--rf-ease-out);
+}
+.rf-progress-strip .fill-started  { background: var(--rf-state-started); }
+.rf-progress-strip .fill-mastered { background: var(--rf-state-mastered); }
+.rf-progress-strip .ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc((100% / var(--rf-tick-count, 100)) - 1px),
+    rgba(0, 0, 0, 0.5) calc((100% / var(--rf-tick-count, 100)) - 1px),
+    rgba(0, 0, 0, 0.5) calc(100% / var(--rf-tick-count, 100))
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+/* ---- Legend ---- */
+.rf-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rf-space-4);
+  font-family: var(--rf-font-mono);
+  font-size: var(--rf-text-xs);
+  color: var(--rf-ink-2);
+}
+.rf-legend-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  margin-inline-end: 6px;
+  vertical-align: 1px;
+}
+
+/* ---- Streak: vertical flame thermometer left edge ---- */
+.rf-streak-card {
+  position: relative;
+  overflow: hidden;
+}
+.rf-streak-thermo {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 4px;
+}
+.rf-streak-thermo::before {
+  /* Filled portion: from bottom, height driven by --streak (0..1). */
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: calc(var(--streak, 0) * 100%);
+  background: linear-gradient(
+    to top,
+    var(--rf-streak-warm) 0%,
+    var(--rf-streak-hot) calc(min(1, var(--streak, 0)) * 70%),
+    var(--rf-streak-white) 100%
+  );
+  transition: height 800ms var(--rf-ease-out), background 400ms var(--rf-ease-out);
+}
+.rf-streak-thermo::after {
+  /* Cold base track behind the fill. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--rf-streak-cold);
+  z-index: -1;
+}
+.rf-streak-flame {
+  font-size: clamp(40px, 10vw, 64px);
+  line-height: 1;
+}
+
+/* ---- Bottom tab bar (4 items) ---- */
+.rf-tabbar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: var(--rf-z-tabbar);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--rf-bg);
+  border-top: 1px solid var(--rf-border-subtle);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-inline:
+    env(safe-area-inset-left, 0)
+    env(safe-area-inset-right, 0);
+}
+.rf-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--rf-tab);
+  padding: 6px 4px 8px;
+  background: transparent;
+  border: none;
+  color: var(--rf-ink-3);
+  font-family: var(--rf-font-display);
+  font-size: var(--rf-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 180ms var(--rf-ease-out);
+}
+.rf-tab:hover,
+.rf-tab:focus-visible { color: var(--rf-ink-2); }
+.rf-tab.active { color: var(--rf-accent); }
+.rf-tab.active::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 25%; right: 25%;
+  height: 2px;
+  background: var(--rf-accent);
+  border-radius: 0 0 2px 2px;
+}
+.rf-tab-icon { font-size: 22px; line-height: 1; }
+.rf-tab-label {
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  max-height: 0;
+  transition: opacity 180ms var(--rf-ease-out), max-height 180ms var(--rf-ease-out);
+}
+.rf-tab.active .rf-tab-label { opacity: 1; max-height: 14px; }
+.rf-tab-badge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 22px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--rf-state-mastered);
+  color: var(--rf-bg);
+  font-family: var(--rf-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Library pills (Questions / Courses) ---- */
+.rf-pillrow {
+  display: inline-flex;
+  background: var(--rf-bg-elev);
+  border: 1px solid var(--rf-border-subtle);
+  border-radius: var(--rf-radius-pill);
+  padding: 4px;
+  gap: 2px;
+}
+.rf-pill {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--rf-ink-2);
+  font: 500 14px var(--rf-font-display);
+  padding: 8px 14px;
+  border-radius: var(--rf-radius-pill);
+  cursor: pointer;
+  min-height: var(--rf-control);
+}
+.rf-pill.active {
+  background: var(--rf-accent);
+  color: var(--rf-ink-on-accent);
+}
+
+/* ---- Metric layout ---- */
+.rf-metric { display: flex; flex-direction: column; gap: var(--rf-space-3); }
+.rf-metric-row { display: flex; align-items: flex-end; gap: 0; }
+
+/* ---- Vertical layouts inside card ---- */
+.rf-stack-3 { display: flex; flex-direction: column; gap: var(--rf-space-3); }
+.rf-stack-4 { display: flex; flex-direction: column; gap: var(--rf-space-4); }
+.rf-stack-5 { display: flex; flex-direction: column; gap: var(--rf-space-5); }
+
+/* ---- Cluster (horizontal flex with wrap) ---- */
+.rf-cluster { display: flex; gap: var(--rf-space-3); align-items: center; flex-wrap: wrap; }
+.rf-cluster.between { justify-content: space-between; }
+
+/* ---- Reduced-motion: kill animations/transitions on RF surface only. ---- */
+@media (prefers-reduced-motion: reduce) {
+  .rf-progress-strip .fill-mastered,
+  .rf-progress-strip .fill-started,
+  .rf-streak-thermo::before {
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   Mobile header (RF redesign).
+   ============================================================ */
+.rf-mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--rf-z-sticky);
+  background: var(--rf-bg);
+  border-bottom: 1px solid var(--rf-border-subtle);
+  padding-top: env(safe-area-inset-top, 0);
+  padding-inline:
+    max(var(--rf-pad-page), env(safe-area-inset-left, 0))
+    max(var(--rf-pad-page), env(safe-area-inset-right, 0));
+}
+.rf-mobile-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  gap: var(--rf-space-3);
+}
+.rf-mobile-header-row.track-row {
+  padding-bottom: var(--rf-space-3);
+  min-height: auto;
+}
+.rf-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-space-2);
+  min-width: 0;
+}
+.rf-mobile-brand-icon {
+  font-size: 18px;
+  color: var(--rf-accent);
+  line-height: 1;
+}
+.rf-mobile-brand-text {
+  font-family: var(--rf-font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--rf-ink);
+}
+.rf-mobile-header-actions {
+  display: flex;
+  gap: var(--rf-space-2);
+  align-items: center;
+}
+.rf-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rf-control);
+  height: var(--rf-control);
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--rf-border-subtle);
+  border-radius: var(--rf-radius-sm);
+  color: var(--rf-ink);
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 140ms var(--rf-ease-out), border-color 140ms var(--rf-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.rf-icon-btn:hover,
+.rf-icon-btn:focus-visible { background: var(--rf-bg-press); border-color: var(--rf-border); }
+
+/* Track switcher restyle on mobile: align with RF aesthetic. */
+@media (max-width: 47.9375em) {
+  .rf-mobile-header .track-switcher {
+    margin-left: 0;
+    background: var(--rf-bg-elev);
+    border: 1px solid var(--rf-border-subtle);
+    padding: 3px;
+  }
+  .rf-mobile-header .track-tab {
+    padding: 6px var(--rf-space-3);
+    color: var(--rf-ink-2);
+    font-family: var(--rf-font-display);
+    font-size: 12px;
+  }
+  .rf-mobile-header .track-tab.active {
+    background: var(--rf-accent);
+    box-shadow: none;
+    color: var(--rf-ink-on-accent);
+  }
+  .rf-mobile-header .track-tab .track-label { display: inline; }
+  .rf-mobile-header .track-tab .track-count {
+    background: rgba(255,255,255,0.18);
+    font-family: var(--rf-font-mono);
+    font-size: 10px;
+  }
+}
+
+/* When the RF mobile layout is mounted, hide the legacy topbar and PR-4 bottom tab. */
+body.rf-mobile .topbar,
+body.rf-mobile .bottom-tab-bar { display: none !important; }
+body.rf-mobile { background: var(--rf-bg); }
+body.rf-mobile .mesh-bg { display: none; }
+body.rf-mobile .app { background: var(--rf-bg); height: auto; min-height: 100dvh; }
+body.rf-mobile .view { padding: 0; max-width: 100vw; overflow: visible; }
+
+/* Library: when on mobile, the existing Browse/CoursesList/AccountsView
+   are wrapped in MobileLibrary. Give them edge-to-edge feel + token spacing. */
+@media (max-width: 47.9375em) {
+  body.rf-mobile .browse { display: block !important; padding: 0; }
+  body.rf-mobile .browse .list-pane,
+  body.rf-mobile .browse .detail { background: var(--rf-bg-elev); border-color: var(--rf-border-subtle); }
+}

@@ -10,6 +10,7 @@ import { useTheme } from "./hooks/useTheme";
 import { usePomodoro } from "./hooks/usePomodoro";
 import { useToasts } from "./hooks/useToasts";
 import { useTrack } from "./hooks/useTrack";
+import { useIsDesktop } from "./hooks/useMediaQuery";
 import Dashboard from "./components/Dashboard";
 import Browse from "./components/Browse";
 import Flashcards from "./components/Flashcards";
@@ -24,6 +25,12 @@ import Pomodoro from "./components/Pomodoro";
 import LoadingScreen from "./components/LoadingScreen";
 import TrackSwitcher from "./components/TrackSwitcher";
 import XPBar from "./components/XPBar";
+import MoreSheet from "./components/MoreSheet";
+import MobileHeader from "./components/_rf/MobileHeader";
+import MobileDashboard from "./components/_rf/MobileDashboard";
+import MobileLibrary from "./components/_rf/MobileLibrary";
+import MobileBottomTabBar from "./components/_rf/MobileBottomTabBar";
+import Screen from "./components/_rf/Screen";
 import { isDue } from "./lib/sm2";
 import type { Achievement } from "./lib/achievements";
 import { detectCourseAchievements } from "./lib/achievements";
@@ -34,11 +41,20 @@ import { detectAndUnlockBadges } from "./lib/pentestBadges";
 export default function App() {
   const [view, setView] = useState<View>("dashboard");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [forcedTopic, setForcedTopic] = useState<string | null>(null);
   const [forcedQuestionId, setForcedQuestionId] = useState<number | null>(null);
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
   const [pendingAccountFilter, setPendingAccountFilter] = useState<string | null | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const isDesktop = useIsDesktop();
+
+  // Body class toggle so the legacy desktop chrome can step aside on mobile.
+  useEffect(() => {
+    document.body.classList.toggle("rf-mobile", !isDesktop);
+    return () => { document.body.classList.remove("rf-mobile"); };
+  }, [isDesktop]);
 
   const { theme, setTheme } = useTheme();
   const { toasts, push: pushToast, dismiss: dismissToast } = useToasts();
@@ -48,7 +64,6 @@ export default function App() {
   };
 
   // Active track is loaded after the DB is ready (initial value 'dotnet').
-  // Build the active question list reactively.
   const [trackReady, setTrackReady] = useState(false);
   const { track, setTrack } = useTrack(trackReady);
 
@@ -93,7 +108,6 @@ export default function App() {
   // Detect new badges after each progress update
   useEffect(() => {
     if (!progress.ready) return;
-    // Compute current streak quickly
     let streak = 0;
     const today = new Date();
     for (let i = 0; i < 365; i++) {
@@ -163,7 +177,7 @@ export default function App() {
     return activeQuestions.filter((q) => isDue(progress.state.progress[q.id], now)).length;
   }, [progress.state, progress.ready, activeQuestions]);
 
-  // Global keyboard shortcuts
+  // Global keyboard shortcuts (desktop primarily)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const inField =
@@ -188,7 +202,6 @@ export default function App() {
       }
       else if (e.key === "6") setView("accounts");
       else if (e.key === "t" && e.shiftKey) {
-        // Shift+T toggles between tracks
         setTrack(track === "pentest" ? "dotnet" : "pentest");
       }
     };
@@ -226,6 +239,12 @@ export default function App() {
     setView("courses");
   };
 
+  // Close the More sheet whenever the user navigates.
+  const goView = (v: View) => {
+    setView(v);
+    setMoreOpen(false);
+  };
+
   if (!progress.ready || !courses.ready || !accountsApi.ready) {
     return (
       <>
@@ -235,7 +254,6 @@ export default function App() {
     );
   }
 
-  // If DB init blew up, show the error rather than a stuck loader.
   if (progress.initError) {
     return (
       <>
@@ -256,7 +274,6 @@ export default function App() {
     );
   }
 
-  // Pentest data is still being fetched on the first switch — show loader briefly.
   if (track === "pentest" && !pentestQuestions) {
     return (
       <>
@@ -267,77 +284,163 @@ export default function App() {
   }
 
   const activeCourse = activeCourseId ? courses.getCourseById(activeCourseId) : undefined;
-  const trackName = track === "pentest" ? "Pentest Interview Tracker" : ".NET Interview Tracker";
+  const trackName = track === "pentest" ? "Pentest" : ".NET";
   const trackBrandIcon = track === "pentest" ? "🛡️" : "🎯";
 
-  return (
-    <>
-      <div className="mesh-bg" />
-      <div className="app" data-track={track}>
-        <header className="topbar">
-          <div className="brand">
-            <div className="brand-icon">{trackBrandIcon}</div>
-            <div>
-              <h1>{trackName}</h1>
-              <div className="sub">
-                {activeQuestions.length} questions · {courses.courses.length} courses · {accountsApi.accounts.length} accounts
-              </div>
-            </div>
-            <TrackSwitcher
-              value={track}
-              onChange={setTrack}
-              dotnetCount={QUESTIONS.length}
-              pentestCount={PENTEST_COUNT}
+  const importInput = (
+    <input
+      ref={fileRef}
+      type="file"
+      accept=".sqlite,.db,application/x-sqlite3,application/octet-stream"
+      style={{ display: "none" }}
+      onChange={(e) => {
+        const f = e.target.files?.[0];
+        if (f) {
+          progress
+            .importSqlite(f)
+            .then(() => {
+              courses.reload();
+              accountsApi.reload();
+            })
+            .catch((err) => alert("Import failed: " + err.message));
+        }
+        e.target.value = "";
+      }}
+    />
+  );
+
+  // ============================================================
+  // Mobile branch — RF redesign. Editorial type, flat surfaces,
+  // segmented progress, 4-tab bottom nav. Desktop tree untouched.
+  // ============================================================
+  if (!isDesktop) {
+    const initialLibraryPane: "questions" | "courses" | "accounts" =
+      view === "courses" || view === "course-detail" ? "courses"
+        : view === "accounts" ? "accounts"
+        : "questions";
+
+    return (
+      <>
+        <a href="#main-view" className="skip-link">Skip to content</a>
+        <MobileHeader
+          trackTitle={`${trackName} Tracker`}
+          track={track}
+          onTrackChange={setTrack}
+          dotnetCount={QUESTIONS.length}
+          pentestCount={PENTEST_COUNT}
+          onOpenSearch={() => setPaletteOpen(true)}
+          onOpenMore={() => setMoreOpen(true)}
+        />
+
+        <main id="main-view" tabIndex={-1}>
+          {view === "dashboard" && (
+            <MobileDashboard
+              state={progress.state}
+              questions={activeQuestions}
+              track={track}
+              trackTitle={trackName}
             />
+          )}
+
+          {(view === "library" || view === "browse" || view === "courses" || view === "course-detail" || view === "accounts") && (
+            <MobileLibrary
+              initialPane={initialLibraryPane}
+              renderQuestions={() => (
+                <Browse
+                  state={progress.state}
+                  setStatus={(id, status) => progress.setStatus(id, status, track)}
+                  setNotes={progress.setNotes}
+                  setConfidence={(id, c) => progress.setConfidence(id, c, track)}
+                  forcedTopic={forcedTopic}
+                  forcedQuestionId={forcedQuestionId}
+                  questions={activeQuestions}
+                  track={track}
+                />
+              )}
+              renderCourses={() => (
+                <CoursesList
+                  courses={courses.courses}
+                  sessions={courses.sessions}
+                  accounts={accountsApi.accounts}
+                  onOpenCourse={openCourse}
+                  onCreateCourse={(input) => {
+                    const id = courses.createCourse(input);
+                    if (id) openCourse(id);
+                  }}
+                  onImportCourses={(rows) => { for (const r of rows) courses.createCourse(r); }}
+                  onBulkAssign={(ids, email) => courses.bulkAssignAccount(ids, email)}
+                  onAddAccount={(email) => accountsApi.addAccount({ email })}
+                  initialAccountFilter={pendingAccountFilter}
+                  onConsumeInitialFilter={() => setPendingAccountFilter(undefined)}
+                />
+              )}
+              renderAccounts={() => (
+                <AccountsView
+                  accounts={accountsApi.accounts}
+                  courses={courses.courses}
+                  sessions={courses.sessions}
+                  onAddAccount={(input) => { accountsApi.addAccount(input); }}
+                  onUpdateAccount={accountsApi.updateAccount}
+                  onSetPrimary={accountsApi.setPrimary}
+                  onDeleteAccount={(id, reassignTo) => {
+                    const result = accountsApi.deleteAccount(id, reassignTo);
+                    if (result.ok) courses.reload();
+                    return result;
+                  }}
+                  onDeepLinkToCourses={jumpToCoursesForAccount}
+                />
+              )}
+            />
+          )}
+
+          {view === "flashcards" && (
+            <Screen>
+              <div className="rf-page">
+                <Flashcards
+                  state={progress.state}
+                  rate={(id, r) => progress.rate(id, r, track)}
+                  setConfidence={(id, c) => progress.setConfidence(id, c, track)}
+                  mode="all"
+                  questions={activeQuestions}
+                  track={track}
+                />
+              </div>
+            </Screen>
+          )}
+          {view === "review" && (
+            <Screen>
+              <div className="rf-page">
+                <Flashcards
+                  state={progress.state}
+                  rate={(id, r) => progress.rate(id, r, track)}
+                  setConfidence={(id, c) => progress.setConfidence(id, c, track)}
+                  mode="review"
+                  questions={activeQuestions}
+                  track={track}
+                />
+              </div>
+            </Screen>
+          )}
+        </main>
+
+        <MobileBottomTabBar view={view} setView={goView} dueCount={dueCount} />
+
+        <CommandPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          onSelect={onPaletteSelect}
+          courses={courses.courses}
+          accounts={accountsApi.accounts}
+          questions={activeQuestions}
+        />
+
+        <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
+          <div className="more-section">
+            <div className="more-section-label">Progress</div>
+            <XPBar xp={xp} track={track} />
           </div>
-
-          <nav>
-            <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}>
-              Dashboard
-            </button>
-            <button className={view === "browse" ? "active" : ""} onClick={() => setView("browse")}>
-              Browse
-            </button>
-            <button
-              className={view === "courses" || view === "course-detail" ? "active" : ""}
-              onClick={() => setView("courses")}
-            >
-              Courses
-            </button>
-            <button className={view === "flashcards" ? "active" : ""} onClick={() => setView("flashcards")}>
-              Flashcards
-            </button>
-            <button className={view === "review" ? "active" : ""} onClick={() => setView("review")}>
-              Review {dueCount > 0 && <span className="badge">{dueCount}</span>}
-            </button>
-          </nav>
-
-          <div className="actions">
-            <div className="xp-bar-wrap"><XPBar xp={xp} track={track} /></div>
-            <button
-              className={`ghost ${view === "accounts" ? "active" : ""}`}
-              onClick={() => setView("accounts")}
-              title="Manage Udemy accounts"
-              aria-label="Accounts"
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px" }}
-            >
-              <span className="avatar-stack" aria-hidden>
-                {accountsApi.accounts.slice(0, 5).map((a) => (
-                  <AccountAvatar key={a.email} account={a} size="xs" />
-                ))}
-              </span>
-              <span style={{ fontSize: 12 }}>Accounts</span>
-            </button>
-            <button
-              className="ghost"
-              onClick={() => setPaletteOpen(true)}
-              title="Search · ⌘K"
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px" }}
-            >
-              <span>⌕</span>
-              <span style={{ color: "var(--text-3)" }}>Search</span>
-              <span className="kbd">⌘K</span>
-            </button>
+          <div className="more-section">
+            <div className="more-section-label">Focus</div>
             <Pomodoro
               mode={pomo.mode}
               time={pomo.time}
@@ -346,33 +449,151 @@ export default function App() {
               reset={pomo.reset}
               skip={pomo.skip}
             />
-            <ThemeSwitcher theme={theme} setTheme={setTheme} />
-            <button className="ghost" onClick={progress.exportSqlite} title="Download .sqlite database file">⬇ .sqlite</button>
-            <button className="ghost" onClick={() => fileRef.current?.click()} title="Import .sqlite file">⬆</button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".sqlite,.db,application/x-sqlite3,application/octet-stream"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) {
-                  progress
-                    .importSqlite(f)
-                    .then(() => {
-                      courses.reload();
-                      accountsApi.reload();
-                    })
-                    .catch((err) => alert("Import failed: " + err.message));
-                }
-                e.target.value = "";
-              }}
-            />
-            <button className="ghost" onClick={progress.reset} title="Reset progress (wipes SQLite DB)">⟲</button>
           </div>
+          <div className="more-section">
+            <div className="more-section-label">Appearance</div>
+            <ThemeSwitcher theme={theme} setTheme={setTheme} />
+          </div>
+          <div className="more-section">
+            <div className="more-section-label">Database</div>
+            <div className="more-actions">
+              <button type="button" className="more-action" onClick={() => { progress.exportSqlite(); }}>
+                <span aria-hidden>⬇</span> Export .sqlite
+              </button>
+              <button type="button" className="more-action" onClick={() => fileRef.current?.click()}>
+                <span aria-hidden>⬆</span> Import .sqlite
+              </button>
+              <button type="button" className="more-action danger" onClick={() => progress.reset()}>
+                <span aria-hidden>⟲</span> Reset local DB
+              </button>
+            </div>
+          </div>
+        </MoreSheet>
+
+        {importInput}
+        <ToastHost toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
+  // ============================================================
+  // Desktop branch — existing layout, untouched.
+  // ============================================================
+  return (
+    <>
+      <a href="#main-view" className="skip-link">Skip to content</a>
+      <div className="mesh-bg" />
+      <div className={`app${isDesktop ? "" : " app-mobile"}`} data-track={track}>
+        <header className="topbar pt-safe px-safe" role="banner">
+          <div className="topbar-row topbar-row-primary">
+            <div className="brand">
+              <div className="brand-icon" aria-hidden>{trackBrandIcon}</div>
+              <div className="brand-text">
+                <h1>{trackName} Tracker</h1>
+                <div className="sub">
+                  {activeQuestions.length} questions{isDesktop ? ` · ${courses.courses.length} courses · ${accountsApi.accounts.length} accounts` : ""}
+                </div>
+              </div>
+            </div>
+
+            <div className="topbar-trailing">
+              <TrackSwitcher
+                value={track}
+                onChange={setTrack}
+                dotnetCount={QUESTIONS.length}
+                pentestCount={PENTEST_COUNT}
+              />
+
+              {!isDesktop && (
+                <>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => setPaletteOpen(true)}
+                    aria-label="Search"
+                    title="Search"
+                  >⌕</button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => setMoreOpen(true)}
+                    aria-label="More options"
+                    aria-haspopup="dialog"
+                    aria-expanded={moreOpen}
+                    title="More"
+                  >☰</button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {isDesktop && (
+            <div className="topbar-row topbar-row-secondary">
+              <nav aria-label="Primary navigation">
+                <button className={view === "dashboard" ? "active" : ""} onClick={() => goView("dashboard")}>
+                  Dashboard
+                </button>
+                <button className={view === "browse" ? "active" : ""} onClick={() => goView("browse")}>
+                  Browse
+                </button>
+                <button
+                  className={view === "courses" || view === "course-detail" ? "active" : ""}
+                  onClick={() => goView("courses")}
+                >
+                  Courses
+                </button>
+                <button className={view === "flashcards" ? "active" : ""} onClick={() => goView("flashcards")}>
+                  Flashcards
+                </button>
+                <button className={view === "review" ? "active" : ""} onClick={() => goView("review")}>
+                  Review {dueCount > 0 && <span className="badge">{dueCount}</span>}
+                </button>
+              </nav>
+
+              <div className="actions">
+                <div className="xp-bar-wrap"><XPBar xp={xp} track={track} /></div>
+                <button
+                  className={`ghost ${view === "accounts" ? "active" : ""}`}
+                  onClick={() => goView("accounts")}
+                  title="Manage Udemy accounts"
+                  aria-label="Accounts"
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px" }}
+                >
+                  <span className="avatar-stack" aria-hidden>
+                    {accountsApi.accounts.slice(0, 5).map((a) => (
+                      <AccountAvatar key={a.email} account={a} size="xs" />
+                    ))}
+                  </span>
+                  <span style={{ fontSize: 12 }}>Accounts</span>
+                </button>
+                <button
+                  className="ghost"
+                  onClick={() => setPaletteOpen(true)}
+                  title="Search · ⌘K"
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px" }}
+                >
+                  <span>⌕</span>
+                  <span style={{ color: "var(--text-3)" }}>Search</span>
+                  <span className="kbd">⌘K</span>
+                </button>
+                <Pomodoro
+                  mode={pomo.mode}
+                  time={pomo.time}
+                  start={pomo.start}
+                  pause={pomo.pause}
+                  reset={pomo.reset}
+                  skip={pomo.skip}
+                />
+                <ThemeSwitcher theme={theme} setTheme={setTheme} />
+                <button className="ghost" onClick={progress.exportSqlite} title="Download .sqlite database file">⬇ .sqlite</button>
+                <button className="ghost" onClick={() => fileRef.current?.click()} title="Import .sqlite file">⬆</button>
+                <button className="ghost" onClick={progress.reset} title="Reset progress (wipes SQLite DB)">⟲</button>
+              </div>
+            </div>
+          )}
         </header>
 
-        <main className="view">
+        <main id="main-view" className="view" tabIndex={-1}>
           {view === "dashboard" && (
             <Dashboard
               state={progress.state}
@@ -444,7 +665,7 @@ export default function App() {
             <CourseDetail
               course={activeCourse}
               accounts={accountsApi.accounts}
-              onBack={() => setView("courses")}
+              onBack={() => goView("courses")}
               getSections={courses.getSections}
               getTopics={courses.getTopics}
               getSessionsForCourse={courses.getSessionsForCourse}
@@ -460,7 +681,7 @@ export default function App() {
           )}
           {view === "course-detail" && !activeCourse && (
             <div className="empty"><div className="icon">📚</div><h3>Pick a course</h3>
-              <button className="primary" onClick={() => setView("courses")}>Go to Courses</button>
+              <button className="primary" onClick={() => goView("courses")}>Go to Courses</button>
             </div>
           )}
           {view === "accounts" && (
@@ -480,6 +701,8 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* (Mobile branch returns early above; no bottom-tab in the desktop tree.) */}
       </div>
 
       <CommandPalette
@@ -490,6 +713,58 @@ export default function App() {
         accounts={accountsApi.accounts}
         questions={activeQuestions}
       />
+
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
+        <div className="more-section">
+          <div className="more-section-label">Progress</div>
+          <XPBar xp={xp} track={track} />
+        </div>
+
+        <div className="more-section">
+          <div className="more-section-label">Focus</div>
+          <Pomodoro
+            mode={pomo.mode}
+            time={pomo.time}
+            start={pomo.start}
+            pause={pomo.pause}
+            reset={pomo.reset}
+            skip={pomo.skip}
+          />
+        </div>
+
+        <div className="more-section">
+          <div className="more-section-label">Appearance</div>
+          <ThemeSwitcher theme={theme} setTheme={setTheme} />
+        </div>
+
+        <div className="more-section">
+          <div className="more-section-label">Account</div>
+          <button
+            type="button"
+            className="more-action"
+            onClick={() => goView("accounts")}
+          >
+            <span aria-hidden>👤</span> Manage accounts
+          </button>
+        </div>
+
+        <div className="more-section">
+          <div className="more-section-label">Database</div>
+          <div className="more-actions">
+            <button type="button" className="more-action" onClick={() => { progress.exportSqlite(); }}>
+              <span aria-hidden>⬇</span> Export .sqlite
+            </button>
+            <button type="button" className="more-action" onClick={() => fileRef.current?.click()}>
+              <span aria-hidden>⬆</span> Import .sqlite
+            </button>
+            <button type="button" className="more-action danger" onClick={() => progress.reset()}>
+              <span aria-hidden>⟲</span> Reset local DB
+            </button>
+          </div>
+        </div>
+      </MoreSheet>
+
+      {importInput}
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
     </>
   );

@@ -1,0 +1,55 @@
+/* ============================================================
+   Reset + base. Mobile-first.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-size: var(--font-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;        /* Prevent iOS auto font-size on rotate. */
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;              /* App-shell pattern — .view scrolls. */
+}
+
+/* Honor user motion preference globally. Overrides every animation
+   and transition. Individual components also gate motion off this. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard-only focus ring. Removes the default browser outline on
+   click/touch but keeps it for Tab navigation. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* Native form controls inherit family/size so our token-driven scale
+   reaches them without per-component overrides. */
+input, button, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Images / SVGs — sane defaults. (No raster images in the app today;
+   this is forward-protection for any future <img>.) */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

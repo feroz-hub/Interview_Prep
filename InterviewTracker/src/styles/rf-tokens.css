@@ -1,0 +1,97 @@
+/* ============================================================
+   RF design tokens — "Range" mobile-first redesign.
+   Used by every component under src/components/_rf/.
+   Coexists with legacy --accent/--bg-* tokens (which remain
+   in use by desktop components).
+   ============================================================ */
+
+:root {
+  /* ---- Surfaces ---- */
+  --rf-bg:           #0A0A0B;          /* true near-black */
+  --rf-bg-elev:      #111114;          /* subtle elevated */
+  --rf-bg-press:     #1A1A1F;          /* pressed state */
+
+  --rf-ink:          #F5F5F7;          /* primary ink */
+  --rf-ink-2:        #8A8A93;          /* secondary */
+  --rf-ink-3:        #5A5A63;          /* tertiary / disabled */
+  --rf-ink-on-accent:#FFFFFF;
+
+  --rf-border-subtle: rgba(255, 255, 255, 0.06);
+  --rf-border:        rgba(255, 255, 255, 0.10);
+  --rf-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* ---- Accent (single hue, surgical use) ---- */
+  --rf-accent:       #8B7CFF;          /* CTA, live ring, active tab */
+  --rf-accent-press: #7665E8;
+  --rf-accent-soft:  rgba(139, 124, 255, 0.16);
+
+  /* ---- State colors for the segmented progress strip ---- */
+  --rf-state-mastered: #5EF0A3;
+  --rf-state-started:  #FFD166;
+  --rf-state-unseen:   rgba(255, 255, 255, 0.06);
+
+  /* ---- Streak gradient (neutral → ember → white-hot) ---- */
+  --rf-streak-cold:  #3A3A42;
+  --rf-streak-warm:  #FF7A3D;
+  --rf-streak-hot:   #FFD080;
+  --rf-streak-white: #FFFFFF;
+
+  /* ---- Spacing (4-px ramp) ---- */
+  --rf-space-1: 4px;
+  --rf-space-2: 8px;
+  --rf-space-3: 12px;
+  --rf-space-4: 16px;
+  --rf-space-5: 24px;
+  --rf-space-6: 32px;
+  --rf-space-7: 48px;
+  --rf-space-8: 64px;
+
+  /* ---- Page padding (fluid, never below 16px). ---- */
+  --rf-pad-page: clamp(16px, 4vw, 24px);
+
+  /* ---- Typography stacks ---- */
+  --rf-font-display: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --rf-font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---- Hero number scale ---- */
+  --rf-hero-xl: clamp(72px, 18vw, 128px);   /* mastery / streak count */
+  --rf-hero-lg: clamp(48px, 12vw, 96px);
+  --rf-hero-md: clamp(32px, 8vw, 56px);
+
+  /* ---- Body type ---- */
+  --rf-text-display-1: clamp(22px, 6vw, 28px);   /* card heading */
+  --rf-text-display-2: clamp(18px, 4.5vw, 22px);
+  --rf-text-body:      15px;
+  --rf-text-sm:        13px;
+  --rf-text-xs:        11px;
+  --rf-text-mono-sm:   12px;
+  --rf-text-mono-xs:   10.5px;
+
+  /* ---- Tracking ---- */
+  --rf-track-tight:   -0.02em;
+  --rf-track-normal:  0;
+  --rf-track-wide:    0.08em;
+
+  /* ---- Radii ---- */
+  --rf-radius-sm: 8px;
+  --rf-radius:    12px;
+  --rf-radius-lg: 16px;
+  --rf-radius-pill: 999px;
+
+  /* ---- Control sizing (mobile floor 44, CTA 56) ---- */
+  --rf-control-sm: 40px;
+  --rf-control:    44px;   /* WCAG 2.5.5 minimum */
+  --rf-control-lg: 56px;   /* primary CTA, native inputs */
+  --rf-tab:        56px;   /* bottom-tab cell */
+
+  /* ---- Z scale ---- */
+  --rf-z-base:   0;
+  --rf-z-sticky: 10;
+  --rf-z-tabbar: 50;
+  --rf-z-modal:  100;
+
+  /* ---- Motion (springs are JS via framer-motion; these are CSS analogues) ---- */
+  --rf-spring-quick: 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --rf-spring-soft:  420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --rf-ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+}
