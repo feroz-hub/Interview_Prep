@@ -9,6 +9,8 @@ export function defaultProgress(): ProgressEntry {
     ease: 2.5,
     interval: 0,
     repetitions: 0,
+    lapses: 0,
+    saved: false,
     lastReviewed: null,
     nextReview: null,
     reviewCount: 0,

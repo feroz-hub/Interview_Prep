@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AppState, Confidence, ProgressEntry, Question, Rating, Status, Track } from "../types";
-import { applyRating, defaultProgress, isoDate } from "../lib/sm2";
+import { defaultProgress, isoDate } from "../lib/sm2";
+import { schedule } from "../srs/sm2";
+import { deriveStatus } from "../srs/status";
 import {
   detectNewAchievements,
   detectTopicAchievements,
@@ -17,6 +19,8 @@ import {
   importSqliteFile,
   resetDb,
   dbStats,
+  insertReviewLog,
+  loadReviewLogForQuestion,
 } from "../lib/db";
 import { awardXp } from "../lib/xp";
 
@@ -143,18 +147,64 @@ export function useProgress(
     if (!ready) return;
     setState((s) => {
       const prev = s.progress[id] ?? defaultProgress();
-      const next = applyRating(prev, r);
+      const now = new Date();
+      // Pure SRS engine — Phase 2.
+      const sched = schedule(
+        {
+          ease: prev.ease,
+          intervalDays: prev.interval,
+          reps: prev.repetitions,
+          lapses: prev.lapses ?? 0,
+        },
+        r,
+        now,
+      );
+      // Status derivation. Read recent ratings from the log for the "no lapse
+      // in last 3" rule. This is O(1) — a 3-row LIMIT query.
+      const recent = loadReviewLogForQuestion(id, 3).map((row) => row.rating);
+      const status = deriveStatus({
+        reps: sched.reps,
+        lapses: sched.lapses,
+        intervalDays: sched.intervalDays,
+        recentRatings: [r, ...recent], // include this rating
+      });
+
+      const next: ProgressEntry = {
+        ...prev,
+        ease: sched.ease,
+        interval: sched.intervalDays,
+        repetitions: sched.reps,
+        lapses: sched.lapses,
+        nextReview: sched.dueAt.toISOString(),
+        lastReviewed: now.toISOString(),
+        reviewCount: prev.reviewCount + 1,
+        correctCount: prev.correctCount + (r === "again" ? 0 : 1),
+        status,
+      };
+
       if (prev.status !== "mastered" && next.status === "mastered") {
         setTimeout(() => fireConfetti(), 50);
         awardXp(track, "master", id);
       }
       awardXp(track, "rate", id);
       if (r === "good" || r === "easy") awardXp(track, "rate-bonus", id);
+
       upsertProgress(id, next);
+      // Append-only audit log — Phase 1 table.
+      insertReviewLog({
+        questionId: id,
+        ratedAt: now.toISOString(),
+        rating: r,
+        prevInterval: prev.interval,
+        newInterval: sched.intervalDays,
+        prevEase: prev.ease,
+        newEase: sched.ease,
+        responseTimeMs: 0,
+      });
+
       const date = isoDate();
       bumpActivity(date, "reviews");
       const day = s.activity[date] ?? { date, reviews: 0, marked: 0 };
-      // Daily-streak bonus: if today had no reviews before this one, and yesterday did, award streak XP.
       if (day.reviews === 0) {
         const y = new Date(); y.setDate(y.getDate() - 1);
         const yKey = y.toISOString().slice(0, 10);

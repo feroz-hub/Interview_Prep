@@ -25,6 +25,8 @@ import type {
   Badge,
   XpEvent,
   InterviewDate,
+  Rating4,
+  ReviewLog,
 } from "../types";
 
 const IDB_NAME = "interview-tracker-db";
@@ -32,7 +34,8 @@ const IDB_STORE = "sqlite";
 const IDB_KEY = "main";
 // v3: add `track`, `chapter`, `answer` to questions; `confidence` to progress;
 //     new tables xp_log, badges, interview_dates.
-const SCHEMA_VERSION = 3;
+// v4: add `lapses` + `saved` to progress; new `review_log` table (SRS).
+const SCHEMA_VERSION = 4;
 
 // Dev-server endpoints provided by vite-plugin-db-sync. When the dev server is
 // running, the real .db file on disk (data/interview-tracker.db) is the source
@@ -173,8 +176,21 @@ function createSchema(d: Database) {
       review_count INTEGER NOT NULL DEFAULT 0,
       correct_count INTEGER NOT NULL DEFAULT 0,
       confidence INTEGER NOT NULL DEFAULT 0,
+      lapses INTEGER NOT NULL DEFAULT 0,
+      saved INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (question_id) REFERENCES questions(id)
+    );
+    CREATE TABLE IF NOT EXISTS review_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question_id INTEGER NOT NULL,
+      rated_at TEXT NOT NULL,
+      rating TEXT NOT NULL,
+      prev_interval INTEGER NOT NULL,
+      new_interval INTEGER NOT NULL,
+      prev_ease REAL NOT NULL,
+      new_ease REAL NOT NULL,
+      response_time_ms INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS activity (
       date TEXT PRIMARY KEY,
@@ -213,9 +229,16 @@ function createSchema(d: Database) {
     );
     CREATE INDEX IF NOT EXISTS idx_progress_next_review ON progress(next_review);
     CREATE INDEX IF NOT EXISTS idx_progress_status ON progress(status);
+    -- NB: idx_progress_saved is intentionally created in ensureSchemaShape
+    --     AFTER the ALTER TABLE that guarantees the saved column exists.
+    --     Creating it here would crash with "no such column: saved" on
+    --     a pre-v4 DB, because CREATE INDEX IF NOT EXISTS only guards
+    --     against a duplicate index, not a missing column.
     CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions(topic);
     CREATE INDEX IF NOT EXISTS idx_questions_track ON questions(track);
     CREATE INDEX IF NOT EXISTS idx_xp_log_track_date ON xp_log(track, date);
+    CREATE INDEX IF NOT EXISTS idx_review_log_question ON review_log(question_id, rated_at);
+    CREATE INDEX IF NOT EXISTS idx_review_log_rated_at ON review_log(rated_at);
   `);
   createCoursesSchema(d);
   // Only stamp the version on a fresh DB. Migrations update it for existing DBs.
@@ -344,6 +367,13 @@ function ensureSchemaShape(d: Database) {
   if (!pcols.includes("confidence")) {
     d.run(`ALTER TABLE progress ADD COLUMN confidence INTEGER NOT NULL DEFAULT 0`);
   }
+  // v4 additions — Spaced Repetition Scheduling.
+  if (!pcols.includes("lapses")) {
+    d.run(`ALTER TABLE progress ADD COLUMN lapses INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!pcols.includes("saved")) {
+    d.run(`ALTER TABLE progress ADD COLUMN saved INTEGER NOT NULL DEFAULT 0`);
+  }
 
   d.run(`
     CREATE TABLE IF NOT EXISTS xp_log (
@@ -368,8 +398,22 @@ function ensureSchemaShape(d: Database) {
       target_date TEXT NOT NULL,
       set_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-    CREATE INDEX IF NOT EXISTS idx_questions_track    ON questions(track);
-    CREATE INDEX IF NOT EXISTS idx_xp_log_track_date  ON xp_log(track, date);
+    CREATE TABLE IF NOT EXISTS review_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question_id INTEGER NOT NULL,
+      rated_at TEXT NOT NULL,
+      rating TEXT NOT NULL,
+      prev_interval INTEGER NOT NULL,
+      new_interval INTEGER NOT NULL,
+      prev_ease REAL NOT NULL,
+      new_ease REAL NOT NULL,
+      response_time_ms INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_questions_track       ON questions(track);
+    CREATE INDEX IF NOT EXISTS idx_xp_log_track_date     ON xp_log(track, date);
+    CREATE INDEX IF NOT EXISTS idx_progress_saved        ON progress(saved);
+    CREATE INDEX IF NOT EXISTS idx_review_log_question   ON review_log(question_id, rated_at);
+    CREATE INDEX IF NOT EXISTS idx_review_log_rated_at   ON review_log(rated_at);
   `);
 
   // Backfill: any pre-existing question without a track gets 'dotnet'.
@@ -379,12 +423,14 @@ function ensureSchemaShape(d: Database) {
 function runMigrations(d: Database) {
   // Always run idempotent shape enforcement so a broken/half-migrated DB self-heals.
   // The version-based blocks below are retained for any future *destructive* migrations
-  // that should only run once (none for v2/v3, which are purely additive).
+  // that should only run once (none for v2/v3/v4, which are purely additive).
   ensureSchemaShape(d);
   const current = getSchemaVersion(d);
   if (current < 2) migrateToV2(d);
-  if (current < 3) {
-    d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '3')`);
+  if (current < SCHEMA_VERSION) {
+    d.run(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`, [
+      String(SCHEMA_VERSION),
+    ]);
   }
 }
 
@@ -604,6 +650,7 @@ async function initDbInner(): Promise<Database> {
       }
     }
 
+    let migrated = false;
     if (opened) {
       _db = opened;
       createSchema(_db); // CREATE TABLE IF NOT EXISTS + INSERT OR IGNORE meta
@@ -613,7 +660,8 @@ async function initDbInner(): Promise<Database> {
       const seedWrote = await seedQuestions(_db); // fast-paths when already-seeded
       seedAccounts(_db);
       seedCourses(_db);
-      mutated = vAfter > vBefore || seedWrote;
+      migrated = vAfter > vBefore;
+      mutated = migrated || seedWrote;
     } else {
       _db = new SQL.Database();
       createSchema(_db);
@@ -623,12 +671,20 @@ async function initDbInner(): Promise<Database> {
       seedCourses(_db);
       migrateLocalStorage(_db);
       mutated = true; // fresh DB always needs to be written out
+      migrated = true;
     }
 
     if (mutated) {
-      // Schedule rather than await so the UI can render immediately while the
-      // ~1MB IDB write happens in the background.
-      setTimeout(() => { persistNow().catch((e) => console.error("init persist failed:", e)); }, 0);
+      if (migrated) {
+        // Schema bumped (e.g. v3 → v4). Await the IDB write so a fast reload
+        // can't reload the pre-migration bytes. The user is already past the
+        // LoadingScreen check by the time `initPromise` resolves; an extra
+        // ~30 ms is invisible.
+        await persistNow().catch((e) => console.error("init persist failed:", e));
+      } else {
+        // Seed-only changes are non-critical; let them flush in background.
+        setTimeout(() => { persistNow().catch((e) => console.error("init persist failed:", e)); }, 0);
+      }
     }
     return _db;
   })();
@@ -754,6 +810,8 @@ export interface ProgressRow {
   review_count: number;
   correct_count: number;
   confidence?: number;
+  lapses?: number;
+  saved?: number;     // SQLite stores booleans as 0|1
 }
 
 export function loadAllProgress(): Record<number, ProgressEntry> {
@@ -766,6 +824,8 @@ export function loadAllProgress(): Record<number, ProgressEntry> {
       ease: r.ease,
       interval: r.interval,
       repetitions: r.repetitions,
+      lapses: r.lapses ?? 0,
+      saved: (r.saved ?? 0) === 1,
       lastReviewed: r.last_reviewed,
       nextReview: r.next_review,
       reviewCount: r.review_count,
@@ -787,8 +847,9 @@ export function upsertProgress(id: number, entry: ProgressEntry): void {
   run(
     `INSERT INTO progress
        (question_id, status, notes, ease, interval, repetitions,
-        last_reviewed, next_review, review_count, correct_count, confidence, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        last_reviewed, next_review, review_count, correct_count, confidence,
+        lapses, saved, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(question_id) DO UPDATE SET
        status         = excluded.status,
        notes          = excluded.notes,
@@ -800,11 +861,15 @@ export function upsertProgress(id: number, entry: ProgressEntry): void {
        review_count   = excluded.review_count,
        correct_count  = excluded.correct_count,
        confidence     = excluded.confidence,
+       lapses         = excluded.lapses,
+       saved          = excluded.saved,
        updated_at     = excluded.updated_at`,
     [
       id, entry.status, entry.notes, entry.ease, entry.interval, entry.repetitions,
       entry.lastReviewed, entry.nextReview, entry.reviewCount, entry.correctCount,
       entry.confidence ?? 0,
+      entry.lapses ?? 0,
+      entry.saved ? 1 : 0,
     ]
   );
 }
@@ -1166,5 +1231,82 @@ export function setInterviewDate(track: Track, date: string | null): void {
     `INSERT INTO interview_dates (track, target_date, set_at) VALUES (?, ?, datetime('now'))
      ON CONFLICT(track) DO UPDATE SET target_date = excluded.target_date, set_at = excluded.set_at`,
     [track, date]
+  );
+}
+
+// ---------- SRS: review_log helpers (Phase 1) ----------
+interface ReviewLogRow {
+  id: number;
+  question_id: number;
+  rated_at: string;
+  rating: Rating4;
+  prev_interval: number;
+  new_interval: number;
+  prev_ease: number;
+  new_ease: number;
+  response_time_ms: number;
+}
+
+function rowToReviewLog(r: ReviewLogRow): ReviewLog {
+  return {
+    id: r.id,
+    questionId: r.question_id,
+    ratedAt: r.rated_at,
+    rating: r.rating,
+    prevInterval: r.prev_interval,
+    newInterval: r.new_interval,
+    prevEase: r.prev_ease,
+    newEase: r.new_ease,
+    responseTimeMs: r.response_time_ms,
+  };
+}
+
+/** Append a single review-log row. SRS engine calls this on every rating. */
+export function insertReviewLog(entry: Omit<ReviewLog, "id">): void {
+  run(
+    `INSERT INTO review_log
+       (question_id, rated_at, rating, prev_interval, new_interval,
+        prev_ease, new_ease, response_time_ms)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      entry.questionId, entry.ratedAt, entry.rating,
+      entry.prevInterval, entry.newInterval,
+      entry.prevEase, entry.newEase,
+      entry.responseTimeMs,
+    ]
+  );
+}
+
+/** Most-recent rating log entries for a given question. Newest first. */
+export function loadReviewLogForQuestion(questionId: number, limit = 50): ReviewLog[] {
+  return query<ReviewLogRow>(
+    `SELECT * FROM review_log
+      WHERE question_id = ?
+      ORDER BY rated_at DESC, id DESC
+      LIMIT ?`,
+    [questionId, limit]
+  ).map(rowToReviewLog);
+}
+
+/** Aggregate counts by rating for an arbitrary time window (e.g., a session). */
+export function reviewLogCountsBetween(fromIso: string, toIso: string): Record<Rating4, number> {
+  const rows = query<{ rating: Rating4; c: number }>(
+    `SELECT rating, COUNT(*) AS c FROM review_log
+      WHERE rated_at >= ? AND rated_at <= ?
+      GROUP BY rating`,
+    [fromIso, toIso]
+  );
+  const out: Record<Rating4, number> = { again: 0, hard: 0, good: 0, easy: 0 };
+  for (const r of rows) out[r.rating] = r.c;
+  return out;
+}
+
+/** Toggle the user-starred / saved flag on a question. */
+export function setQuestionSaved(questionId: number, saved: boolean): void {
+  run(
+    `INSERT INTO progress (question_id, saved) VALUES (?, ?)
+     ON CONFLICT(question_id) DO UPDATE SET saved = excluded.saved,
+                                            updated_at = datetime('now')`,
+    [questionId, saved ? 1 : 0]
   );
 }

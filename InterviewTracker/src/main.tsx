@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./styles/index.css";
 
@@ -20,7 +21,9 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("_pla
 } else {
   root.render(
     <React.StrictMode>
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </React.StrictMode>
   );
 }

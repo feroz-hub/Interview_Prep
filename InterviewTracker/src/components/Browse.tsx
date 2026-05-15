@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AppState, Confidence, Question, Status, Track } from "../types";
 import { defaultProgress } from "../lib/sm2";
-import ConfidenceDots from "./ConfidenceDots";
+import ConfidenceSlider from "./_rf/ConfidenceSlider";
+import StatusSegmentedControl from "./_rf/StatusSegmentedControl";
 
 interface BrowseProps {
   state: AppState;
@@ -169,22 +170,13 @@ export default function Browse({
             </div>
             <h2>{selected.question}</h2>
 
-            <div className="status-row">
-              <button onClick={() => setStatus(selected.id, "new")} style={{ opacity: sp.status === "new" ? 1 : 0.7 }}>
-                <span className="status-dot new" /> Not started
-              </button>
-              <button className={sp.status === "learning" ? "warn" : ""} onClick={() => setStatus(selected.id, "learning")}>
-                <span className="status-dot learning" /> Learning
-              </button>
-              <button className={sp.status === "review" ? "danger" : ""} onClick={() => setStatus(selected.id, "review")}>
-                <span className="status-dot review" /> Need review
-              </button>
-              <button className={sp.status === "mastered" ? "success" : ""} onClick={() => setStatus(selected.id, "mastered")}>
-                <span className="status-dot mastered" /> Mastered
-              </button>
+            <div className="rf-stack-3">
+              <span className="rf-label">Status (derived)</span>
+              <StatusSegmentedControl value={sp.status} />
+              <p className="rf-card-subhead">Status updates as you review.</p>
             </div>
 
-            <ConfidenceDots
+            <ConfidenceSlider
               value={(sp.confidence ?? 0) as Confidence}
               onChange={(c) => setConfidence(selected.id, c)}
             />

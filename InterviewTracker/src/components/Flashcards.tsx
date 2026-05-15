@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AppState, Confidence, Question, Rating, Track } from "../types";
 import { defaultProgress, isDue, applyRating } from "../lib/sm2";
-import ConfidenceDots from "./ConfidenceDots";
+import ConfidenceSlider from "./_rf/ConfidenceSlider";
 
 interface FlashcardsProps {
   state: AppState;
@@ -180,10 +180,9 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
           </div>
           {current && (
             <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 10 }}>
-              <ConfidenceDots
+              <ConfidenceSlider
                 value={(progress?.confidence ?? 0) as Confidence}
                 onChange={(c) => setConfidence(current.id, c)}
-                size="sm"
                 label="How confident did you feel?"
               />
             </div>

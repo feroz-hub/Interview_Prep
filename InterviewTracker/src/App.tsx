@@ -11,6 +11,7 @@ import { usePomodoro } from "./hooks/usePomodoro";
 import { useToasts } from "./hooks/useToasts";
 import { useTrack } from "./hooks/useTrack";
 import { useIsDesktop } from "./hooks/useMediaQuery";
+import { useUrlView } from "./hooks/useUrlView";
 import Dashboard from "./components/Dashboard";
 import Browse from "./components/Browse";
 import Flashcards from "./components/Flashcards";
@@ -28,9 +29,11 @@ import XPBar from "./components/XPBar";
 import MoreSheet from "./components/MoreSheet";
 import MobileHeader from "./components/_rf/MobileHeader";
 import MobileDashboard from "./components/_rf/MobileDashboard";
-import MobileLibrary from "./components/_rf/MobileLibrary";
+import MobileLibraryV2 from "./components/_rf/MobileLibraryV2";
+import MobileQuestionDetail from "./components/_rf/MobileQuestionDetail";
+import MobileSession from "./components/_rf/MobileSession";
+import MobileStats from "./components/_rf/MobileStats";
 import MobileBottomTabBar from "./components/_rf/MobileBottomTabBar";
-import Screen from "./components/_rf/Screen";
 import { isDue } from "./lib/sm2";
 import type { Achievement } from "./lib/achievements";
 import { detectCourseAchievements } from "./lib/achievements";
@@ -45,10 +48,19 @@ export default function App() {
   const [forcedTopic, setForcedTopic] = useState<string | null>(null);
   const [forcedQuestionId, setForcedQuestionId] = useState<number | null>(null);
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
+  // Mobile question-detail open state (Phase 5).
+  const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
+  // Session entry filter (Phase 6).
+  const [sessionFilter, setSessionFilter] = useState<{
+    topic: string | "all";
+    queue: "due" | "new" | "all" | "mastered" | "saved";
+  } | null>(null);
   const [pendingAccountFilter, setPendingAccountFilter] = useState<string | null | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isDesktop = useIsDesktop();
+  // Sync URL ↔ view state. Back/forward gestures work; deep links work.
+  useUrlView(view, setView);
 
   // Body class toggle so the legacy desktop chrome can step aside on mobile.
   useEffect(() => {
@@ -314,10 +326,9 @@ export default function App() {
   // segmented progress, 4-tab bottom nav. Desktop tree untouched.
   // ============================================================
   if (!isDesktop) {
-    const initialLibraryPane: "questions" | "courses" | "accounts" =
-      view === "courses" || view === "course-detail" ? "courses"
-        : view === "accounts" ? "accounts"
-        : "questions";
+    const detailQ = activeQuestionId
+      ? activeQuestions.find((q) => q.id === activeQuestionId) ?? null
+      : null;
 
     return (
       <>
@@ -333,93 +344,60 @@ export default function App() {
         />
 
         <main id="main-view" tabIndex={-1}>
-          {view === "dashboard" && (
-            <MobileDashboard
+          {/* Question Detail overlays everything when active. */}
+          {detailQ ? (
+            <MobileQuestionDetail
+              question={detailQ}
               state={progress.state}
-              questions={activeQuestions}
               track={track}
-              trackTitle={trackName}
+              onBack={() => setActiveQuestionId(null)}
+              onPracticeOne={() => {
+                setSessionFilter({ topic: "all", queue: "all" });
+                setActiveQuestionId(null);
+                goView("flashcards");
+              }}
+              setNotes={progress.setNotes}
+              setConfidence={(id, c) => progress.setConfidence(id, c, track)}
             />
-          )}
+          ) : (
+            <>
+              {view === "dashboard" && (
+                <MobileDashboard
+                  state={progress.state}
+                  questions={activeQuestions}
+                  track={track}
+                  trackTitle={trackName}
+                />
+              )}
 
-          {(view === "library" || view === "browse" || view === "courses" || view === "course-detail" || view === "accounts") && (
-            <MobileLibrary
-              initialPane={initialLibraryPane}
-              renderQuestions={() => (
-                <Browse
-                  state={progress.state}
-                  setStatus={(id, status) => progress.setStatus(id, status, track)}
-                  setNotes={progress.setNotes}
-                  setConfidence={(id, c) => progress.setConfidence(id, c, track)}
-                  forcedTopic={forcedTopic}
-                  forcedQuestionId={forcedQuestionId}
+              {(view === "library" || view === "browse" || view === "courses" ||
+                view === "course-detail" || view === "accounts") && (
+                <MobileLibraryV2
                   questions={activeQuestions}
-                  track={track}
-                />
-              )}
-              renderCourses={() => (
-                <CoursesList
-                  courses={courses.courses}
-                  sessions={courses.sessions}
-                  accounts={accountsApi.accounts}
-                  onOpenCourse={openCourse}
-                  onCreateCourse={(input) => {
-                    const id = courses.createCourse(input);
-                    if (id) openCourse(id);
+                  state={progress.state}
+                  onOpenQuestion={(id) => setActiveQuestionId(id)}
+                  onStartSession={(f) => {
+                    setSessionFilter(f);
+                    goView("flashcards");
                   }}
-                  onImportCourses={(rows) => { for (const r of rows) courses.createCourse(r); }}
-                  onBulkAssign={(ids, email) => courses.bulkAssignAccount(ids, email)}
-                  onAddAccount={(email) => accountsApi.addAccount({ email })}
-                  initialAccountFilter={pendingAccountFilter}
-                  onConsumeInitialFilter={() => setPendingAccountFilter(undefined)}
                 />
               )}
-              renderAccounts={() => (
-                <AccountsView
-                  accounts={accountsApi.accounts}
-                  courses={courses.courses}
-                  sessions={courses.sessions}
-                  onAddAccount={(input) => { accountsApi.addAccount(input); }}
-                  onUpdateAccount={accountsApi.updateAccount}
-                  onSetPrimary={accountsApi.setPrimary}
-                  onDeleteAccount={(id, reassignTo) => {
-                    const result = accountsApi.deleteAccount(id, reassignTo);
-                    if (result.ok) courses.reload();
-                    return result;
-                  }}
-                  onDeepLinkToCourses={jumpToCoursesForAccount}
-                />
-              )}
-            />
-          )}
 
-          {view === "flashcards" && (
-            <Screen>
-              <div className="rf-page">
-                <Flashcards
-                  state={progress.state}
-                  rate={(id, r) => progress.rate(id, r, track)}
-                  setConfidence={(id, c) => progress.setConfidence(id, c, track)}
-                  mode="all"
+              {view === "flashcards" && (
+                <MobileSession
                   questions={activeQuestions}
-                  track={track}
-                />
-              </div>
-            </Screen>
-          )}
-          {view === "review" && (
-            <Screen>
-              <div className="rf-page">
-                <Flashcards
                   state={progress.state}
-                  rate={(id, r) => progress.rate(id, r, track)}
-                  setConfidence={(id, c) => progress.setConfidence(id, c, track)}
-                  mode="review"
-                  questions={activeQuestions}
                   track={track}
+                  initialFilter={sessionFilter ?? undefined}
+                  rate={(id, r) => progress.rate(id, r, track)}
+                  onClose={() => { setSessionFilter(null); goView("library"); }}
                 />
-              </div>
-            </Screen>
+              )}
+
+              {view === "review" && (
+                <MobileStats state={progress.state} questions={activeQuestions} />
+              )}
+            </>
           )}
         </main>
 

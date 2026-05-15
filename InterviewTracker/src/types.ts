@@ -19,16 +19,35 @@ export type Confidence = 0 | 1 | 2 | 3 | 4 | 5; // 0 = unrated
 export interface ProgressEntry {
   status: Status;
   notes: string;
-  // Spaced-repetition (SM-2 lite)
+  // Spaced-repetition (SM-2 lite). Column names preserved (extend-only);
+  // the SRS engine vocabulary (interval_days/reps/due_at/...) lives in
+  // src/srs/* and adapts to/from these.
   ease: number;          // E-Factor, default 2.5
   interval: number;      // days until next review
   repetitions: number;   // streak of successful reviews
+  lapses: number;        // count of 'again' ratings (SRS v4)
+  saved: boolean;        // user-starred for later (SRS v4)
   lastReviewed: string | null;  // ISO date
-  nextReview: string | null;    // ISO date
+  nextReview: string | null;    // ISO date (alias: due_at in SRS engine)
   reviewCount: number;
   correctCount: number;
   // Self-rated confidence (0 = unrated, 1 weak .. 5 strong).
   confidence?: Confidence;
+}
+
+// Append-only row in the review_log table. One per Session-Mode rating.
+export type Rating4 = "again" | "hard" | "good" | "easy";
+
+export interface ReviewLog {
+  id: number;
+  questionId: number;
+  ratedAt: string;          // ISO timestamp
+  rating: Rating4;
+  prevInterval: number;
+  newInterval: number;
+  prevEase: number;
+  newEase: number;
+  responseTimeMs: number;
 }
 
 // ---------- Motivation layer ----------

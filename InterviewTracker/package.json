@@ -10,12 +10,16 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173",
-    "snapshot": "node scripts/copy-initial-db.mjs"
+    "snapshot": "node scripts/copy-initial-db.mjs",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "framer-motion": "^11.11.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0",
     "recharts": "^2.13.3",
     "sql.js": "^1.14.1"
   },
@@ -24,7 +28,9 @@
     "@types/react-dom": "^18.3.1",
     "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.0",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.0"
   }
 }

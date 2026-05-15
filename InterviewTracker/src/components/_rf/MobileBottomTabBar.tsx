@@ -15,8 +15,8 @@ interface Tab {
 const TABS: ReadonlyArray<Tab> = [
   { id: "dashboard",  label: "Home",    icon: "◎" },
   { id: "library",    label: "Library", icon: "❐" },
-  { id: "flashcards", label: "Study",   icon: "✎" },
-  { id: "review",     label: "Review",  icon: "↻" },
+  { id: "flashcards", label: "Session", icon: "✎" },
+  { id: "review",     label: "Stats",   icon: "◫" },
 ];
 
 /**
