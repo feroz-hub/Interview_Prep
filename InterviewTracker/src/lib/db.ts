@@ -632,7 +632,13 @@ export async function initDb(): Promise<Database> {
 
 async function initDbInner(): Promise<Database> {
   return (async () => {
-    if (!SQL) SQL = await initSqlJs({ locateFile: () => wasmUrl });
+    // WASM compile and database-bytes lookup are independent — run them in
+    // parallel. On a cold load this overlaps the ~660 KB WASM fetch with the
+    // ~512 KB initial-db fetch (or the IndexedDB read), cutting time-to-app
+    // by roughly the smaller of the two.
+    const sqlReady: Promise<SqlJsStatic> = SQL
+      ? Promise.resolve(SQL)
+      : initSqlJs({ locateFile: () => wasmUrl });
 
     // Source order:
     //  1. Dev: /__db/load (writes go back to disk via the vite plugin).
@@ -640,11 +646,16 @@ async function initDbInner(): Promise<Database> {
     //  3. Production first-visit: /initial-db.sqlite static asset (deploy-time
     //     snapshot of the author's progress).
     //  4. Otherwise: brand-new empty DB.
-    const fromDisk = await loadFromDisk();
-    const fromIdb = fromDisk ? null : await loadBinary();
-    const fromInitial =
-      !fromDisk && !fromIdb ? await loadInitialBundledDb() : null;
-    const existing = fromDisk ?? fromIdb ?? fromInitial;
+    const bytesReady: Promise<Uint8Array | null> = (async () => {
+      const fromDisk = await loadFromDisk();
+      if (fromDisk) return fromDisk;
+      const fromIdb = await loadBinary();
+      if (fromIdb) return fromIdb;
+      return loadInitialBundledDb();
+    })();
+
+    const [sqlMod, existing] = await Promise.all([sqlReady, bytesReady]);
+    SQL = sqlMod;
 
     let mutated = false;
     // Try to open the inherited DB; if the bytes are corrupt or non-SQLite

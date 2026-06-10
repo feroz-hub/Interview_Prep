@@ -90,6 +90,13 @@ export default function App() {
   // Sync URL ↔ view state. Back/forward gestures work; deep links work.
   useUrlView(view, setView);
 
+  // Desktop has no dedicated "library" screen — Browse IS the library there.
+  // Without this, a direct load of /library (deep link, refresh, or a
+  // desktop⇄mobile resize) left the main area permanently empty.
+  useEffect(() => {
+    if (isDesktop && view === "library") setView("browse");
+  }, [isDesktop, view]);
+
   // Body class toggle so the legacy desktop chrome can step aside on mobile.
   useEffect(() => {
     document.body.classList.toggle("rf-mobile", !isDesktop);
@@ -234,6 +241,21 @@ export default function App() {
 
   // One delegated pointer listener feeds the card spotlight effect.
   useEffect(() => initPointerGlow(), []);
+
+  // Fetch the landing view's chunk while the database initializes so the
+  // first render after `ready` is instant instead of queueing another
+  // network round-trip behind the LoadingScreen.
+  useEffect(() => {
+    if (!isDesktop) return; // mobile view chunks are ~1-2 KB; not worth it
+    const k: keyof typeof loaders =
+      view === "courses" || view === "course-detail" ? "courses"
+      : view === "accounts" ? "accounts"
+      : view === "flashcards" || view === "review" ? "flashcards"
+      : view === "browse" || view === "library" ? "browse"
+      : "dashboard";
+    preload(k);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Global keyboard shortcuts (desktop primarily)
   useEffect(() => {
