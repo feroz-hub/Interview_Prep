@@ -1,0 +1,492 @@
+/* ============================================================
+   AURORA — UI v2 layer.
+   Loaded last from styles/index.css so it refines (never forks)
+   the existing class contracts. Zero new dependencies; the
+   "advanced" feel comes from modern platform features:
+
+     · View Transitions API     (view morphs + nav-pill shared element)
+     · @property animated props (living aurora background)
+     · Scroll-driven animations (entry reveals, pure CSS)
+     · color-mix() surfaces     (theme-aware glass + glows)
+     · content-visibility       (530-row lists render lazily)
+
+   Every effect degrades gracefully and respects
+   prefers-reduced-motion.
+   ============================================================ */
+
+/* ---- 0. Registered custom properties (animatable) ---- */
+@property --aur-rot {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ---- 1. Token extensions ---- */
+:root {
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.22), 0 6px 18px -8px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 2px 4px rgba(0, 0, 0, 0.25), 0 16px 40px -12px rgba(0, 0, 0, 0.5);
+  --elev-3: 0 4px 10px rgba(0, 0, 0, 0.3), 0 32px 90px -18px rgba(0, 0, 0, 0.65);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --ring: 0 0 0 2px var(--bg-0), 0 0 0 4px color-mix(in srgb, var(--accent) 75%, transparent);
+  --spot-size: 320px;
+  --spot-strength: 9%;
+}
+[data-theme="mint"] {
+  --elev-1: 0 1px 2px rgba(15, 31, 26, 0.06), 0 6px 18px -8px rgba(15, 31, 26, 0.12);
+  --elev-2: 0 2px 4px rgba(15, 31, 26, 0.07), 0 16px 40px -12px rgba(15, 31, 26, 0.16);
+  --elev-3: 0 4px 10px rgba(15, 31, 26, 0.08), 0 32px 90px -18px rgba(15, 31, 26, 0.22);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --spot-strength: 6%;
+}
+
+/* ---- 2. Base polish ---- */
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text);
+}
+* { scrollbar-width: thin; scrollbar-color: var(--bg-3) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--border-hi); background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 80%, transparent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+button:focus-visible, a:focus-visible { box-shadow: var(--ring); outline: none; }
+
+/* ---- 3. Living aurora background ---- */
+.mesh-bg { isolation: isolate; }
+.mesh-bg::before,
+.mesh-bg::after {
+  width: 72vmax;
+  height: 72vmax;
+  filter: blur(90px) saturate(120%);
+  opacity: 0.5;
+  animation: aurora-drift 46s var(--ease-std) infinite alternate;
+}
+.mesh-bg::before {
+  background:
+    conic-gradient(from var(--aur-rot, 0deg) at 50% 50%,
+      var(--mesh-1), var(--mesh-2), var(--mesh-4), var(--mesh-1));
+  top: -28vmax;
+  left: -24vmax;
+}
+.mesh-bg::after {
+  background:
+    conic-gradient(from calc(180deg - var(--aur-rot, 0deg)) at 50% 50%,
+      var(--mesh-3), var(--mesh-2), var(--mesh-4), var(--mesh-3));
+  bottom: -30vmax;
+  right: -26vmax;
+  animation-delay: -23s;
+}
+/* Fine grain so gradients don't band. Data-URI turbulence, ~300 B. */
+.mesh-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.999; /* promote to its own layer */
+}
+@keyframes aurora-drift {
+  0%   { --aur-rot: 0deg;   transform: translate3d(0, 0, 0) scale(1); }
+  50%  { --aur-rot: 160deg; transform: translate3d(6vmax, -4vmax, 0) scale(1.12); }
+  100% { --aur-rot: 320deg; transform: translate3d(-5vmax, 3vmax, 0) scale(0.94); }
+}
+[data-theme="mint"] .mesh-bg::before,
+[data-theme="mint"] .mesh-bg::after { opacity: 0.55; filter: blur(110px) saturate(105%); }
+
+/* ---- 4. Surface system (glass 2.0 + pointer spotlight) ---- */
+.glass,
+.panel,
+.course-card,
+.account-card,
+.badge-tile {
+  position: relative;
+  box-shadow: var(--glass-hi), var(--elev-1);
+  transition:
+    transform 0.22s var(--ease-out),
+    box-shadow 0.22s var(--ease-out),
+    border-color 0.22s var(--ease-out);
+}
+.glass:hover,
+.panel:hover,
+.course-card:hover,
+.account-card:hover,
+.badge-tile:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-hi));
+  box-shadow: var(--glass-hi), var(--elev-2);
+}
+/* Cards that act as buttons get lift; passive panels stay put. */
+.course-card:hover,
+.account-card:hover,
+.badge-tile:hover,
+.continue-list .item:hover,
+.mini-stat:hover { transform: translateY(-2px); }
+
+/* Pointer-tracked spotlight. --spot-x/y/o are written by lib/pointerGlow.ts
+   (one passive rAF-throttled listener; fine pointers only). */
+@media (pointer: fine) {
+  .glass::after,
+  .panel::after,
+  .course-card::after,
+  .account-card::after,
+  .badge-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--spot-o, 0);
+    transition: opacity 0.35s var(--ease-out);
+    background: radial-gradient(
+      var(--spot-size) circle at var(--spot-x, 50%) var(--spot-y, 50%),
+      color-mix(in srgb, var(--accent) var(--spot-strength), transparent),
+      transparent 70%
+    );
+  }
+}
+
+/* ---- 5. Controls ---- */
+button {
+  transition:
+    transform 0.16s var(--ease-out),
+    box-shadow 0.2s var(--ease-out),
+    background 0.2s var(--ease-std),
+    border-color 0.2s var(--ease-std),
+    filter 0.2s var(--ease-std);
+}
+button:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+
+button.primary {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+button.primary::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto;
+  width: 36%;
+  transform: translateX(-220%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+  transition: transform 0.55s var(--ease-out);
+  pointer-events: none;
+}
+button.primary:hover::after { transform: translateX(420%) skewX(-18deg); }
+
+input, select, textarea {
+  transition: border-color 0.18s var(--ease-std), box-shadow 0.18s var(--ease-std), background 0.18s var(--ease-std);
+}
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+input { caret-color: var(--accent); }
+
+.kbd {
+  box-shadow: inset 0 -1.5px 0 var(--border-hi), var(--glass-hi);
+  transition: transform 0.12s var(--ease-out);
+}
+
+/* ---- 6. Topbar + morphing nav pill ---- */
+.topbar {
+  background: color-mix(in srgb, var(--bg-0) 55%, transparent);
+  box-shadow: 0 1px 0 var(--border), 0 12px 40px -22px rgba(0, 0, 0, 0.55);
+}
+.topbar nav { position: relative; }
+.topbar nav button {
+  position: relative;
+  isolation: isolate;
+  transition: color 0.2s var(--ease-std);
+}
+.topbar nav button:hover { transform: none; }
+
+/* The active button stays transparent — the morphing pill below is the
+   active visual. Without this the legacy solid gradient would paint over
+   the pill (which sits at z-index -1). */
+.topbar nav button.active,
+.topbar nav button.active:hover {
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* The active indicator. One per document; the View Transitions API
+   morphs it between positions when the view changes. */
+.nav-pill {
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 30%, transparent),
+    color-mix(in srgb, var(--accent-2) 24%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 6px 20px -8px var(--accent-glow), var(--glass-hi);
+  view-transition-name: nav-pill;
+}
+.badge { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+
+/* ---- 7. View transitions (cross-fade + drift between views) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-leave 0.18s var(--ease-in) forwards;
+  }
+  ::view-transition-new(root) {
+    animation: vt-enter 0.3s var(--ease-out);
+  }
+  ::view-transition-group(nav-pill) {
+    animation-duration: 0.32s;
+    animation-timing-function: var(--ease-out);
+  }
+}
+@keyframes vt-leave {
+  to { opacity: 0; transform: translateY(-10px) scale(0.992); filter: blur(6px); }
+}
+@keyframes vt-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.996); filter: blur(8px); }
+}
+
+/* ---- 8. Scroll-driven entry reveals (CSS-only, no observers) ---- */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mini-stat,
+    .course-card,
+    .badge-tile,
+    .topic-list .topic-row,
+    .courses-dash .panel {
+      animation: aurora-rise both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 42%;
+    }
+  }
+}
+@keyframes aurora-rise {
+  from { opacity: 0.01; translate: 0 18px; }
+  to   { opacity: 1;    translate: 0 0; }
+}
+
+/* ---- 9. Suspense skeletons (CLS-safe view placeholders) ---- */
+.view-skel { display: grid; gap: 16px; padding: 4px 0; }
+.skel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--text) 6%, transparent),
+    transparent
+  );
+  animation: skel-sweep 1.3s var(--ease-std) infinite;
+}
+@keyframes skel-sweep { to { transform: translateX(100%); } }
+.skel-hero { height: 220px; }
+.skel-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.skel-card { height: 110px; }
+.skel-block { height: 320px; }
+@media (max-width: 47.99em) {
+  .skel-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---- 10. Flashcards: depth stage + per-card entrance ---- */
+.card-stage {
+  position: relative;
+  width: 100%;
+  perspective: 1600px;
+}
+.card-stage::before,
+.card-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  pointer-events: none;
+  z-index: -1;
+}
+.card-stage::before { transform: translateY(12px) scale(0.965); opacity: 0.65; }
+.card-stage::after  { transform: translateY(24px) scale(0.93);  opacity: 0.32; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .flashcard-3d { animation: card-deal 0.42s var(--ease-out); }
+}
+@keyframes card-deal {
+  from { opacity: 0; transform: translateY(26px) rotateX(6deg) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) rotateX(0) scale(1); }
+}
+.flashcard-3d.flipped { animation: none; }
+
+.rate-row button { position: relative; }
+.rate-row button:hover { transform: translateY(-3px); }
+.rate-row button.danger:hover  { box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--red) 65%, transparent); }
+.rate-row button.warn:hover    { box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--yellow) 60%, transparent); }
+.rate-row button.primary:hover { box-shadow: 0 14px 34px -10px var(--accent-glow); }
+.rate-row button.success:hover { box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--green) 60%, transparent); }
+
+.suggested-answer .sa-body { animation: fade-slide 0.28s var(--ease-out); }
+@keyframes fade-slide {
+  from { opacity: 0; translate: 0 6px; }
+}
+
+/* ---- 11. Browse: lazy rows + richer list states ---- */
+.browse .list .list-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 76px;
+  border-left: 2px solid transparent;
+  transition: background 0.16s var(--ease-std), border-color 0.16s var(--ease-std);
+}
+.browse .list .list-item:hover { border-left-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.browse .list .list-item.active { border-left-color: var(--accent); }
+.course-grid .course-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 190px;
+}
+
+/* ---- 12. Command palette: spotlight treatment ---- */
+.cmd-overlay {
+  background: color-mix(in srgb, var(--bg-0) 55%, transparent);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+.cmd-modal {
+  border-radius: var(--radius-xl);
+  box-shadow:
+    var(--glass-hi),
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent),
+    var(--elev-3);
+}
+.cmd-result { transition: background 0.14s var(--ease-std), padding-left 0.14s var(--ease-out); }
+.cmd-result:hover, .cmd-result.selected { padding-left: 18px; }
+
+/* ---- 13. Data viz polish ---- */
+.heatmap .cell { transition: transform 0.14s var(--ease-out), box-shadow 0.14s var(--ease-out); }
+.heatmap .cell:hover {
+  transform: scale(1.35);
+  box-shadow: 0 4px 14px -2px var(--accent-glow);
+  z-index: 1;
+}
+.topic-row .bar .fill,
+.flashcard-progress .progress-mini .fill {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .topic-row .bar .fill { animation: flow 6s linear infinite; }
+}
+@keyframes flow { to { background-position: -200% 0; } }
+.sparkline i { transition: height 0.4s var(--ease-out); }
+
+/* ---- 14. Mobile RF accents ---- */
+.rf-tab { position: relative; isolation: isolate; }
+.rf-tab.active::before { content: none; } /* legacy top-line indicator → replaced by the pill */
+.rf-tab .nav-pill {
+  inset: 4px 2px;
+  border-radius: var(--radius-lg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rf-tab.active .rf-tab-icon { animation: tab-pop 0.32s var(--ease-out); }
+}
+@keyframes tab-pop {
+  0% { transform: scale(0.82); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* ---- 15. Loading screen ---- */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: var(--z-overlay);
+}
+.loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+.loading-orb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 16px 50px var(--accent-glow), var(--glass-hi);
+}
+.loading-orb::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 26px;
+  padding: 2px;
+  background: conic-gradient(from var(--aur-rot, 0deg), var(--accent), transparent 40%, var(--accent-2) 70%, var(--accent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .loading-orb::before { animation: orb-spin 1.6s linear infinite; }
+}
+@keyframes orb-spin {
+  from { --aur-rot: 0deg; }
+  to   { --aur-rot: 360deg; }
+}
+.loading-title { font-size: 17px; font-weight: 700; }
+.loading-sub { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.loading-track {
+  width: 220px;
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--bg-3);
+  position: relative;
+}
+.loading-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  animation: loader-slide 1.4s var(--ease-std) infinite;
+}
+@keyframes loader-slide {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* ---- 16. Reduced motion: hard global stop ---- */
+@media (prefers-reduced-motion: reduce) {
+  .mesh-bg::before,
+  .mesh-bg::after,
+  .skel::after,
+  .loading-track::after { animation: none !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

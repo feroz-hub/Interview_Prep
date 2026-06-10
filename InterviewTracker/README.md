@@ -2,6 +2,27 @@
 
 An interactive Vite + React + TypeScript app that loads all **530 questions** from your `Top-500-DotNet-Interview-Questions.xlsm` and helps you study them with spaced repetition, notes, and progress tracking — all backed by a real **SQLite database** running in your browser via WebAssembly.
 
+## UI v2 — "Aurora"
+
+The interface runs on an additive design layer (`src/styles/aurora.css`) built
+entirely from modern platform features — **zero new dependencies**:
+
+- **View Transitions API** — views cross-fade and the active nav pill *morphs*
+  between tabs (desktop nav and the mobile tab bar share the mechanism).
+- **Living aurora background** — `@property`-animated conic gradients with an
+  SVG grain pass, compositor-only.
+- **Pointer spotlight** — cards catch the light under the cursor (one passive,
+  rAF-throttled listener for the whole document; never attaches on touch).
+- **Scroll-driven reveals** — `animation-timeline: view()`, pure CSS.
+- Every effect respects `prefers-reduced-motion` and degrades gracefully.
+
+Performance went with it: all views are **code-split** (`React.lazy` +
+CLS-safe skeletons), vendors are chunked for caching, and the 530-row Browse
+list uses `content-visibility`. The always-loaded app shell dropped from
+**277 KB → 100 KB gzip**; a mobile session that never opens charts loads
+**~101 KB** instead of 277 KB (recharts ships only with the desktop
+Dashboard). Details in `docs/ui/02-aurora.md`.
+
 ## Quick start
 
 ```bash
