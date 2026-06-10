@@ -8,11 +8,17 @@ interface FlashcardsProps {
   rate: (id: number, r: Rating) => void;
   setConfidence: (id: number, c: Confidence) => void;
   mode: "all" | "review";
+  /** When provided, the unified Study view shows a Due/Shuffle queue switch. */
+  onModeChange?: (m: "all" | "review") => void;
   questions: Question[];
   track: Track;
 }
 
-export default function Flashcards({ state, rate, setConfidence, mode, questions, track }: FlashcardsProps) {
+export default function Flashcards({ state, rate, setConfidence, mode, onModeChange, questions, track }: FlashcardsProps) {
+  const dueCount = useMemo(() => {
+    const now = new Date();
+    return questions.filter((q) => isDue(state.progress[q.id], now)).length;
+  }, [questions, state]);
   const queue = useMemo(() => {
     if (mode === "review") {
       const now = new Date();
@@ -89,11 +95,16 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
       <div className="empty">
         <div className="icon">{mode === "review" ? "🎉" : "📭"}</div>
         <h3>{mode === "review" ? "Nothing due for review" : "No questions"}</h3>
-        <div>
+        <div style={{ marginBottom: mode === "review" && onModeChange ? 16 : 0 }}>
           {mode === "review"
-            ? "All caught up. Use the Flashcards tab to study fresh ones."
+            ? "All caught up — every scheduled card is done for now."
             : "Something went wrong loading questions."}
         </div>
+        {mode === "review" && onModeChange && (
+          <button className="primary" onClick={() => onModeChange("all")}>
+            Shuffle all cards instead
+          </button>
+        )}
       </div>
     );
   }
@@ -136,7 +147,29 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   return (
     <div className={`flashcard-view ${focus ? "focus" : ""}`}>
       <div className="flashcard-progress">
-        <span>{mode === "review" ? "Review" : "Study"} · {idx + 1}/{queue.length} · {track === "pentest" ? "🛡️ Pentest" : "🟦 .NET"}</span>
+        {onModeChange ? (
+          <div className="study-switch" role="tablist" aria-label="Study queue">
+            <button
+              role="tab"
+              aria-selected={mode === "review"}
+              className={mode === "review" ? "active" : ""}
+              onClick={() => onModeChange("review")}
+            >
+              Due{dueCount > 0 ? ` · ${dueCount}` : ""}
+            </button>
+            <button
+              role="tab"
+              aria-selected={mode === "all"}
+              className={mode === "all" ? "active" : ""}
+              onClick={() => onModeChange("all")}
+            >
+              Shuffle all
+            </button>
+          </div>
+        ) : (
+          <span>{mode === "review" ? "Review" : "Study"}</span>
+        )}
+        <span>{idx + 1}/{queue.length} · {track === "pentest" ? "🛡️ Pentest" : "🟦 .NET"}</span>
         <div className="progress-mini"><div className="fill" style={{ width: `${progressPct}%` }} /></div>
         <div className="row" style={{ gap: 6 }}>
           <span><span className="kbd">Space</span> flip</span>

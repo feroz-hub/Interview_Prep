@@ -6,6 +6,16 @@ import App from "./App";
 import "@fontsource-variable/inter";
 import "./styles/index.css";
 
+// Offline + instant repeat visits: hashed assets are served cache-first, the
+// shell network-first. Production only — the dev server must stay untouched.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) => {
+      console.warn("SW registration failed:", e);
+    });
+  });
+}
+
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 
 // DEV-only primitives playground. Reach it at /?_play=1 on localhost.

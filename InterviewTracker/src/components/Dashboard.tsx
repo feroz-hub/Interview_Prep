@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
-  BookOpen, BookMarked, CheckCircle2, GraduationCap, Play, Star, Target, Timer,
+  BookOpen, BookMarked, CalendarClock, CheckCircle2, Compass, GraduationCap,
+  Play, Star, Target, Timer, X,
 } from "lucide-react";
 import { Bars, Donut, StackedBars, type Series } from "./charts";
+import { getMeta, setMeta } from "../lib/db";
 import type { AppState, Badge, Course, CourseSession, Question, Track, UdemyAccount } from "../types";
 import { QUESTIONS } from "../data/questions";
 import { streamColor } from "../data/courses";
@@ -35,6 +37,7 @@ interface Props {
   badges?: Badge[];
   onStartReview?: () => void;
   onStartStudy?: () => void;
+  onOpenLibrary?: () => void;
 }
 
 function formatBytes(n: number): string {
@@ -57,8 +60,20 @@ export default function Dashboard({
   badges = [],
   onStartReview,
   onStartStudy,
+  onOpenLibrary,
 }: Props) {
   const QSET: Question[] = activeQuestions ?? QUESTIONS;
+  // First-run card: fresh databases only (the bundled snapshot ships with
+  // progress, so < 3 touched questions ≈ a genuinely new user).
+  const [onboardDismissed, setOnboardDismissed] = useState(
+    () => getMeta("onboarding_dismissed") === "1"
+  );
+  const dismissOnboarding = () => {
+    setMeta("onboarding_dismissed", "1");
+    setOnboardDismissed(true);
+  };
+  const showOnboarding =
+    !onboardDismissed && Object.keys(state.progress).length < 3;
   const stats = useMemo(() => {
     const total = QSET.length;
     const counts = { new: 0, learning: 0, review: 0, mastered: 0 };
@@ -145,6 +160,40 @@ export default function Dashboard({
 
   return (
     <>
+      {showOnboarding && (
+        <div className="onboard glass" role="region" aria-label="Getting started">
+          <div className="onboard-head">
+            <strong>Welcome — three steps to your first session</strong>
+            <button className="ghost onboard-x" onClick={dismissOnboarding} aria-label="Dismiss getting started">
+              <X size={14} />
+            </button>
+          </div>
+          <div className="onboard-steps">
+            <div className="onboard-step">
+              <span className="onboard-n"><CalendarClock size={15} /></span>
+              <div>
+                <strong>Set your interview date</strong>
+                <span>The countdown below paces your daily plan.</span>
+              </div>
+            </div>
+            <button className="onboard-step" onClick={onOpenLibrary}>
+              <span className="onboard-n"><Compass size={15} /></span>
+              <div>
+                <strong>Scout the library</strong>
+                <span>{QSET.length} questions across {new Set(QSET.map((q) => q.topic)).size} topics — find your weak spots.</span>
+              </div>
+            </button>
+            <button className="onboard-step" onClick={onStartStudy}>
+              <span className="onboard-n"><Play size={15} /></span>
+              <div>
+                <strong>Run your first session</strong>
+                <span>Rate each card — the scheduler handles the rest.</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       <CountdownPanel track={activeTrack} questions={QSET} state={state} />
 
       {(onStartReview || onStartStudy) && (

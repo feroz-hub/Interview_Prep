@@ -14,11 +14,13 @@ interface Tab {
   icon: ReactNode;
 }
 
+// Unified nav vocabulary (v3): Home / Library / Study / Progress — the same
+// words the desktop top bar uses.
 const TABS: ReadonlyArray<Tab> = [
-  { id: "dashboard",  label: "Home",    icon: <Home size={22} /> },
-  { id: "library",    label: "Library", icon: <LibraryBig size={22} /> },
-  { id: "flashcards", label: "Session", icon: <PenLine size={22} /> },
-  { id: "review",     label: "Stats",   icon: <BarChart3 size={22} /> },
+  { id: "dashboard",  label: "Home",     icon: <Home size={22} /> },
+  { id: "library",    label: "Library",  icon: <LibraryBig size={22} /> },
+  { id: "flashcards", label: "Study",    icon: <PenLine size={22} /> },
+  { id: "review",     label: "Progress", icon: <BarChart3 size={22} /> },
 ];
 
 /**

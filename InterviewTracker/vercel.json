@@ -6,7 +6,10 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/((?!assets/|.*\\.(?:wasm|sqlite|svg|png|jpg|jpeg|gif|ico|json|txt|webp)$).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!assets/|.*\\.(?:js|wasm|sqlite|svg|png|jpg|jpeg|gif|ico|json|txt|webp|webmanifest|woff2?)$).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
@@ -20,6 +23,12 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
         { "key": "Content-Type", "value": "application/wasm" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {

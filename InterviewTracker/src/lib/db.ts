@@ -1244,6 +1244,7 @@ export function getInterviewDate(track: Track): InterviewDate | null {
 export function setInterviewDate(track: Track, date: string | null): void {
   if (!date) {
     run(`DELETE FROM interview_dates WHERE track = ?`, [track]);
+    notifyInterviewDateChanged();
     return;
   }
   run(
@@ -1251,6 +1252,15 @@ export function setInterviewDate(track: Track, date: string | null): void {
      ON CONFLICT(track) DO UPDATE SET target_date = excluded.target_date, set_at = excluded.set_at`,
     [track, date]
   );
+  notifyInterviewDateChanged();
+}
+
+// UI listeners (e.g. the topbar countdown chip) subscribe to this so a date
+// set deep inside CountdownPanel updates ambient chrome immediately.
+function notifyInterviewDateChanged(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("interview-date-changed"));
+  }
 }
 
 // ---------- SRS: review_log helpers (Phase 1) ----------

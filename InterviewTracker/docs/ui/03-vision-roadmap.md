@@ -25,15 +25,27 @@ coherence and responsiveness to attention — not more effects.
 | Session summary (rating breakdown, accuracy, restart) | `Flashcards.tsx` | closes the study loop |
 | Label Browse filter selects + search input | `Browse.tsx` | a11y debt from Phase-0 audit |
 
-## Phase 2 (flows)
+## Phase 2 (flows) — shipped
 
-- Unify nav model both form factors: **Home / Library / Study / Progress**.
-- Command-bar verbs in ⌘K: "Log 25m to <course>", "Set interview date",
-  "Switch theme", "Export DB".
-- Intent preloading: `pointerenter` on nav → `import()` the view chunk.
-- `?` keyboard-shortcut overlay; interview countdown chip in topbar < 14 days.
-- First-run guided card for fresh (non-snapshot) DBs.
-- Service worker: precache shell + WASM + chunks → offline, instant repeats.
+- ✅ Unified nav vocabulary: desktop **Home / Library / Courses / Study**
+  (Review folded into Study as the default "Due" queue with a
+  Due/Shuffle-all switch); mobile tabs renamed **Study / Progress**.
+  URLs: `/study` + `/progress` canonical, `/session` + `/review` aliased.
+- ✅ Command-bar verbs in ⌘K (`PaletteAction`): start review, log 25 min to
+  the last course, switch track, 4 themes, set interview date (+1w/+2w/+1m),
+  Pomodoro, export/import DB, shortcuts. Boosted in ranking, ⚡-prefixed.
+- ✅ Intent preloading: nav hover/focus fires the view chunk's `import()`.
+- ✅ `?` shortcut overlay (`ShortcutsOverlay`); also fixed a latent bug where
+  digits 1–4 rated a flipped card *and* navigated views simultaneously —
+  digit nav is now suspended inside Study.
+- ✅ Interview countdown chip in the topbar at ≤ 14 days (pulses at ≤ 3),
+  reactive via an `interview-date-changed` window event from `lib/db`.
+- ✅ First-run guided card on Home for fresh DBs (< 3 touched questions),
+  dismissal persisted in `meta`.
+- ✅ Hand-rolled service worker (`public/sw.js`): cache-first for hashed
+  assets/wasm/fonts, network-first shell with offline fallback; registered
+  in production only. Fixed `vercel.json` rewrites that were swallowing
+  `/manifest.webmanifest` (live bug) and would have swallowed `/sw.js`.
 
 ## Phase 3 (system)
 
