@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { View, Question, Badge } from "./types";
 import { QUESTIONS } from "./data/questions";
 // Pentest data is dynamically imported on first track-switch — see effect below.
@@ -12,28 +12,35 @@ import { useToasts } from "./hooks/useToasts";
 import { useTrack } from "./hooks/useTrack";
 import { useIsDesktop } from "./hooks/useMediaQuery";
 import { useUrlView } from "./hooks/useUrlView";
-import Dashboard from "./components/Dashboard";
-import Browse from "./components/Browse";
-import Flashcards from "./components/Flashcards";
-import CommandPalette from "./components/CommandPalette";
-import CoursesList from "./components/courses/CoursesList";
-import CourseDetail from "./components/courses/CourseDetail";
-import AccountsView from "./components/courses/AccountsView";
 import { AccountAvatar } from "./components/courses/AccountChip";
 import ToastHost from "./components/ToastHost";
 import ThemeSwitcher from "./components/ThemeSwitcher";
 import Pomodoro from "./components/Pomodoro";
 import LoadingScreen from "./components/LoadingScreen";
+import ViewSkeleton from "./components/ViewSkeleton";
 import TrackSwitcher from "./components/TrackSwitcher";
 import XPBar from "./components/XPBar";
 import MoreSheet from "./components/MoreSheet";
 import MobileHeader from "./components/_rf/MobileHeader";
-import MobileDashboard from "./components/_rf/MobileDashboard";
-import MobileLibraryV2 from "./components/_rf/MobileLibraryV2";
-import MobileQuestionDetail from "./components/_rf/MobileQuestionDetail";
-import MobileSession from "./components/_rf/MobileSession";
-import MobileStats from "./components/_rf/MobileStats";
 import MobileBottomTabBar from "./components/_rf/MobileBottomTabBar";
+import { withViewTransition } from "./lib/viewTransition";
+import { initPointerGlow } from "./lib/pointerGlow";
+
+// Views are code-split so the initial chunk stays lean: recharts ships only
+// with Dashboard/Stats, framer-motion only with the views that animate, and
+// the command palette loads the first time it opens.
+const Dashboard = lazy(() => import("./components/Dashboard"));
+const Browse = lazy(() => import("./components/Browse"));
+const Flashcards = lazy(() => import("./components/Flashcards"));
+const CommandPalette = lazy(() => import("./components/CommandPalette"));
+const CoursesList = lazy(() => import("./components/courses/CoursesList"));
+const CourseDetail = lazy(() => import("./components/courses/CourseDetail"));
+const AccountsView = lazy(() => import("./components/courses/AccountsView"));
+const MobileDashboard = lazy(() => import("./components/_rf/MobileDashboard"));
+const MobileLibraryV2 = lazy(() => import("./components/_rf/MobileLibraryV2"));
+const MobileQuestionDetail = lazy(() => import("./components/_rf/MobileQuestionDetail"));
+const MobileSession = lazy(() => import("./components/_rf/MobileSession"));
+const MobileStats = lazy(() => import("./components/_rf/MobileStats"));
 import { isDue } from "./lib/sm2";
 import type { Achievement } from "./lib/achievements";
 import { detectCourseAchievements } from "./lib/achievements";
@@ -44,6 +51,9 @@ import { detectAndUnlockBadges } from "./lib/pentestBadges";
 export default function App() {
   const [view, setView] = useState<View>("dashboard");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // The palette chunk is fetched on first open, then stays mounted so its
+  // input state and result cache survive close/reopen.
+  const [paletteMounted, setPaletteMounted] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [forcedTopic, setForcedTopic] = useState<string | null>(null);
   const [forcedQuestionId, setForcedQuestionId] = useState<number | null>(null);
@@ -189,6 +199,24 @@ export default function App() {
     return activeQuestions.filter((q) => isDue(progress.state.progress[q.id], now)).length;
   }, [progress.state, progress.ready, activeQuestions]);
 
+  // Navigate with a document cross-fade (View Transitions API where
+  // supported). Also closes the More sheet so it never lingers over a
+  // freshly opened view.
+  const goView = useCallback((v: View) => {
+    withViewTransition(() => {
+      setView(v);
+      setMoreOpen(false);
+    });
+  }, []);
+
+  // Mount the lazy palette chunk the first time it opens.
+  useEffect(() => {
+    if (paletteOpen) setPaletteMounted(true);
+  }, [paletteOpen]);
+
+  // One delegated pointer listener feeds the card spotlight effect.
+  useEffect(() => initPointerGlow(), []);
+
   // Global keyboard shortcuts (desktop primarily)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -201,25 +229,25 @@ export default function App() {
         return;
       }
       if (inField) return;
-      if (e.key === "1") setView("dashboard");
-      else if (e.key === "2") setView("browse");
-      else if (e.key === "3") setView("flashcards");
-      else if (e.key === "4") setView("review");
+      if (e.key === "1") goView("dashboard");
+      else if (e.key === "2") goView("browse");
+      else if (e.key === "3") goView("flashcards");
+      else if (e.key === "4") goView("review");
       else if (e.key === "5") {
         if (e.shiftKey) {
-          if (activeCourseId) setView("course-detail");
+          if (activeCourseId) goView("course-detail");
         } else {
-          setView("courses");
+          goView("courses");
         }
       }
-      else if (e.key === "6") setView("accounts");
+      else if (e.key === "6") goView("accounts");
       else if (e.key === "t" && e.shiftKey) {
         setTrack(track === "pentest" ? "dotnet" : "pentest");
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeCourseId, track, setTrack]);
+  }, [activeCourseId, track, setTrack, goView]);
 
   const onPaletteSelect = (sel:
     | { kind: "question"; id: number }
@@ -228,7 +256,7 @@ export default function App() {
   ) => {
     if (sel.kind === "question") {
       setForcedQuestionId(sel.id);
-      setView("browse");
+      goView("browse");
     } else if (sel.kind === "course") {
       openCourse(sel.id);
     } else if (sel.kind === "account") {
@@ -237,24 +265,21 @@ export default function App() {
   };
   const onJumpToTopic = (topic: string) => {
     setForcedTopic(topic);
-    setView("browse");
+    goView("browse");
   };
 
   const openCourse = (id: number) => {
-    setActiveCourseId(id);
     setMeta("last_open_course_id", String(id));
-    setView("course-detail");
+    withViewTransition(() => {
+      setActiveCourseId(id);
+      setView("course-detail");
+      setMoreOpen(false);
+    });
   };
 
   const jumpToCoursesForAccount = (email: string) => {
     setPendingAccountFilter(email);
-    setView("courses");
-  };
-
-  // Close the More sheet whenever the user navigates.
-  const goView = (v: View) => {
-    setView(v);
-    setMoreOpen(false);
+    goView("courses");
   };
 
   if (!progress.ready || !courses.ready || !accountsApi.ready) {
@@ -344,6 +369,7 @@ export default function App() {
         />
 
         <main id="main-view" tabIndex={-1}>
+          <Suspense fallback={<ViewSkeleton />}>
           {/* Question Detail overlays everything when active. */}
           {detailQ ? (
             <MobileQuestionDetail
@@ -399,18 +425,23 @@ export default function App() {
               )}
             </>
           )}
+          </Suspense>
         </main>
 
         <MobileBottomTabBar view={view} setView={goView} dueCount={dueCount} />
 
-        <CommandPalette
-          open={paletteOpen}
-          onClose={() => setPaletteOpen(false)}
-          onSelect={onPaletteSelect}
-          courses={courses.courses}
-          accounts={accountsApi.accounts}
-          questions={activeQuestions}
-        />
+        {paletteMounted && (
+          <Suspense fallback={null}>
+            <CommandPalette
+              open={paletteOpen}
+              onClose={() => setPaletteOpen(false)}
+              onSelect={onPaletteSelect}
+              courses={courses.courses}
+              accounts={accountsApi.accounts}
+              questions={activeQuestions}
+            />
+          </Suspense>
+        )}
 
         <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
           <div className="more-section">
@@ -509,21 +540,26 @@ export default function App() {
             <div className="topbar-row topbar-row-secondary">
               <nav aria-label="Primary navigation">
                 <button className={view === "dashboard" ? "active" : ""} onClick={() => goView("dashboard")}>
+                  {view === "dashboard" && <span className="nav-pill" aria-hidden />}
                   Dashboard
                 </button>
                 <button className={view === "browse" ? "active" : ""} onClick={() => goView("browse")}>
+                  {view === "browse" && <span className="nav-pill" aria-hidden />}
                   Browse
                 </button>
                 <button
                   className={view === "courses" || view === "course-detail" ? "active" : ""}
                   onClick={() => goView("courses")}
                 >
+                  {(view === "courses" || view === "course-detail") && <span className="nav-pill" aria-hidden />}
                   Courses
                 </button>
                 <button className={view === "flashcards" ? "active" : ""} onClick={() => goView("flashcards")}>
+                  {view === "flashcards" && <span className="nav-pill" aria-hidden />}
                   Flashcards
                 </button>
                 <button className={view === "review" ? "active" : ""} onClick={() => goView("review")}>
+                  {view === "review" && <span className="nav-pill" aria-hidden />}
                   Review {dueCount > 0 && <span className="badge">{dueCount}</span>}
                 </button>
               </nav>
@@ -572,6 +608,7 @@ export default function App() {
         </header>
 
         <main id="main-view" className="view" tabIndex={-1}>
+          <Suspense fallback={<ViewSkeleton />}>
           {view === "dashboard" && (
             <Dashboard
               state={progress.state}
@@ -678,19 +715,24 @@ export default function App() {
               onDeepLinkToCourses={jumpToCoursesForAccount}
             />
           )}
+          </Suspense>
         </main>
 
         {/* (Mobile branch returns early above; no bottom-tab in the desktop tree.) */}
       </div>
 
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        onSelect={onPaletteSelect}
-        courses={courses.courses}
-        accounts={accountsApi.accounts}
-        questions={activeQuestions}
-      />
+      {paletteMounted && (
+        <Suspense fallback={null}>
+          <CommandPalette
+            open={paletteOpen}
+            onClose={() => setPaletteOpen(false)}
+            onSelect={onPaletteSelect}
+            courses={courses.courses}
+            accounts={accountsApi.accounts}
+            questions={activeQuestions}
+          />
+        </Suspense>
+      )}
 
       <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
         <div className="more-section">

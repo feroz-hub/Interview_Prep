@@ -46,6 +46,7 @@ export default function MobileBottomTabBar({ view, setView, dueCount }: Props) {
             className={`rf-tab${isActive ? " active" : ""}`}
             onClick={() => setView(t.id)}
           >
+            {isActive && <span className="nav-pill" aria-hidden />}
             <span className="rf-tab-icon" aria-hidden>{t.icon}</span>
             <span className="rf-tab-label">{t.label}</span>
             {t.id === "review" && dueCount > 0 && (

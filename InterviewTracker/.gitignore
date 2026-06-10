@@ -8,3 +8,7 @@ dist
 # Atomic-write temp files from vite-plugin-db-sync.
 # The actual .db file in data/ is intentionally tracked.
 data/*.db.tmp
+
+# Build metadata
+*.tsbuildinfo
+vite.config.ts.timestamp-*.mjs

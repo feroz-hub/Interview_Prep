@@ -13,3 +13,4 @@
 @import "./primitives.css";
 @import "./components.css";
 @import "./rf.css";
+@import "./aurora.css"; /* UI v2 refinement layer — keep last */

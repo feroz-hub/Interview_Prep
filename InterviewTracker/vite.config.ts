@@ -4,5 +4,19 @@ import { dbSyncPlugin } from "./vite-plugin-db-sync";
 
 export default defineConfig({
   plugins: [react(), dbSyncPlugin({ file: "data/interview-tracker.db" })],
-  server: { port: 5173, open: true }
+  server: { port: 5173, open: true },
+  build: {
+    rollupOptions: {
+      output: {
+        // Stable vendor chunks: the app shell stays small and long-cached,
+        // recharts ships only when Dashboard loads, framer-motion only with
+        // the views that animate.
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-recharts": ["recharts"],
+          "vendor-motion": ["framer-motion"],
+        },
+      },
+    },
+  },
 });

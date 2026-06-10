@@ -118,7 +118,9 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
       </div>
 
       {current && (
+        <div className="card-stage">
         <div
+          key={current.id}
           className={`flashcard-3d ${flipped ? "flipped" : ""}`}
           onClick={() => setFlipped((f) => !f)}
           style={{ cursor: "pointer" }}
@@ -148,6 +150,7 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
               </details>
             )}
           </div>
+        </div>
         </div>
       )}
 
