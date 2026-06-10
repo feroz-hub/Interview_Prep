@@ -25,6 +25,9 @@ import MobileHeader from "./components/_rf/MobileHeader";
 import MobileBottomTabBar from "./components/_rf/MobileBottomTabBar";
 import { withViewTransition } from "./lib/viewTransition";
 import { initPointerGlow } from "./lib/pointerGlow";
+import {
+  Download, Menu, RotateCcw, Search, ShieldHalf, Target, Upload, UserRound,
+} from "lucide-react";
 
 // Views are code-split so the initial chunk stays lean: recharts ships only
 // with Dashboard/Stats, framer-motion only with the views that animate, and
@@ -322,7 +325,7 @@ export default function App() {
 
   const activeCourse = activeCourseId ? courses.getCourseById(activeCourseId) : undefined;
   const trackName = track === "pentest" ? "Pentest" : ".NET";
-  const trackBrandIcon = track === "pentest" ? "🛡️" : "🎯";
+  const trackBrandIcon = track === "pentest" ? <ShieldHalf size={17} /> : <Target size={17} />;
 
   const importInput = (
     <input
@@ -467,13 +470,13 @@ export default function App() {
             <div className="more-section-label">Database</div>
             <div className="more-actions">
               <button type="button" className="more-action" onClick={() => { progress.exportSqlite(); }}>
-                <span aria-hidden>⬇</span> Export .sqlite
+                <Download size={15} aria-hidden /> Export .sqlite
               </button>
               <button type="button" className="more-action" onClick={() => fileRef.current?.click()}>
-                <span aria-hidden>⬆</span> Import .sqlite
+                <Upload size={15} aria-hidden /> Import .sqlite
               </button>
               <button type="button" className="more-action danger" onClick={() => progress.reset()}>
-                <span aria-hidden>⟲</span> Reset local DB
+                <RotateCcw size={15} aria-hidden /> Reset local DB
               </button>
             </div>
           </div>
@@ -521,7 +524,7 @@ export default function App() {
                     onClick={() => setPaletteOpen(true)}
                     aria-label="Search"
                     title="Search"
-                  >⌕</button>
+                  ><Search size={16} aria-hidden /></button>
                   <button
                     type="button"
                     className="icon-btn"
@@ -530,7 +533,7 @@ export default function App() {
                     aria-haspopup="dialog"
                     aria-expanded={moreOpen}
                     title="More"
-                  >☰</button>
+                  ><Menu size={16} aria-hidden /></button>
                 </>
               )}
             </div>
@@ -586,7 +589,7 @@ export default function App() {
                   title="Search · ⌘K"
                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px" }}
                 >
-                  <span>⌕</span>
+                  <Search size={14} aria-hidden />
                   <span style={{ color: "var(--text-3)" }}>Search</span>
                   <span className="kbd">⌘K</span>
                 </button>
@@ -599,9 +602,15 @@ export default function App() {
                   skip={pomo.skip}
                 />
                 <ThemeSwitcher theme={theme} setTheme={setTheme} />
-                <button className="ghost" onClick={progress.exportSqlite} title="Download .sqlite database file">⬇ .sqlite</button>
-                <button className="ghost" onClick={() => fileRef.current?.click()} title="Import .sqlite file">⬆</button>
-                <button className="ghost" onClick={progress.reset} title="Reset progress (wipes SQLite DB)">⟲</button>
+                <button className="ghost icon-text" onClick={progress.exportSqlite} title="Download .sqlite database file">
+                  <Download size={13} aria-hidden /> .sqlite
+                </button>
+                <button className="ghost" onClick={() => fileRef.current?.click()} title="Import .sqlite file" aria-label="Import .sqlite file">
+                  <Upload size={13} aria-hidden />
+                </button>
+                <button className="ghost" onClick={progress.reset} title="Reset progress (wipes SQLite DB)" aria-label="Reset local database">
+                  <RotateCcw size={13} aria-hidden />
+                </button>
               </div>
             </div>
           )}
@@ -623,6 +632,8 @@ export default function App() {
               activeTrack={track}
               xp={xp}
               badges={badges}
+              onStartReview={() => goView("review")}
+              onStartStudy={() => goView("flashcards")}
             />
           )}
           {view === "browse" && (
@@ -764,7 +775,7 @@ export default function App() {
             className="more-action"
             onClick={() => goView("accounts")}
           >
-            <span aria-hidden>👤</span> Manage accounts
+            <UserRound size={15} aria-hidden /> Manage accounts
           </button>
         </div>
 
@@ -772,13 +783,13 @@ export default function App() {
           <div className="more-section-label">Database</div>
           <div className="more-actions">
             <button type="button" className="more-action" onClick={() => { progress.exportSqlite(); }}>
-              <span aria-hidden>⬇</span> Export .sqlite
+              <Download size={15} aria-hidden /> Export .sqlite
             </button>
             <button type="button" className="more-action" onClick={() => fileRef.current?.click()}>
-              <span aria-hidden>⬆</span> Import .sqlite
+              <Upload size={15} aria-hidden /> Import .sqlite
             </button>
             <button type="button" className="more-action danger" onClick={() => progress.reset()}>
-              <span aria-hidden>⟲</span> Reset local DB
+              <RotateCcw size={15} aria-hidden /> Reset local DB
             </button>
           </div>
         </div>

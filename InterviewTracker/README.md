@@ -19,9 +19,11 @@ entirely from modern platform features — **zero new dependencies**:
 Performance went with it: all views are **code-split** (`React.lazy` +
 CLS-safe skeletons), vendors are chunked for caching, and the 530-row Browse
 list uses `content-visibility`. The always-loaded app shell dropped from
-**277 KB → 100 KB gzip**; a mobile session that never opens charts loads
-**~101 KB** instead of 277 KB (recharts ships only with the desktop
-Dashboard). Details in `docs/ui/02-aurora.md`.
+**277 KB → ~100 KB gzip**, and v3 replaced recharts with dependency-free
+chart primitives (`src/components/charts.tsx`) — every route now loads in
+roughly 100–110 KB gzip total. Fonts are self-hosted (Inter Variable), icons
+are lucide strokes. Details in `docs/ui/02-aurora.md` and
+`docs/ui/03-vision-roadmap.md`.
 
 ## Quick start
 
@@ -155,7 +157,7 @@ from DevTools → Application if you want.
 
 ```
 InterviewTracker/
-├── package.json                  (sql.js, recharts, react)
+├── package.json                  (sql.js, react, lucide-react)
 ├── vite.config.ts
 ├── tsconfig.*.json
 ├── index.html

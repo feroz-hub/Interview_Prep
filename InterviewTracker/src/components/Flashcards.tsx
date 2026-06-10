@@ -31,8 +31,20 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   const [flipped, setFlipped] = useState(false);
   const [focus, setFocus] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  // Per-session rating tally + start time, feeding the completion summary.
+  const [tally, setTally] = useState<Record<Rating, number>>({ again: 0, hard: 0, good: 0, easy: 0 });
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
-  useEffect(() => { setIdx(0); setFlipped(false); setShowAnswer(false); }, [queue, track]);
+  const resetSession = () => {
+    setIdx(0);
+    setFlipped(false);
+    setShowAnswer(false);
+    setTally({ again: 0, hard: 0, good: 0, easy: 0 });
+    setStartedAt(Date.now());
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { resetSession(); }, [queue, track]);
 
   const current = queue[idx];
   const progress = current ? (state.progress[current.id] ?? defaultProgress()) : null;
@@ -40,6 +52,7 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   const onRate = (r: Rating) => {
     if (!current) return;
     rate(current.id, r);
+    setTally((t) => ({ ...t, [r]: t[r] + 1 }));
     setFlipped(false);
     setShowAnswer(false);
     setTimeout(() => setIdx((i) => i + 1), 250);
@@ -86,15 +99,33 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   }
 
   if (idx >= queue.length) {
+    const rated = tally.again + tally.hard + tally.good + tally.easy;
+    const accuracy = rated ? Math.round(((tally.good + tally.easy) / rated) * 100) : 0;
+    const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
     return (
-      <div className="empty">
+      <div className="empty session-summary">
         <div className="icon">🎉</div>
-        <h3>Session complete!</h3>
-        <div style={{ marginBottom: 16 }}>
-          You went through {queue.length} card{queue.length === 1 ? "" : "s"}. Great work.
-        </div>
-        <button className="primary" onClick={() => { setIdx(0); setFlipped(false); setShowAnswer(false); }}>
-          Start over
+        <h3>Session complete</h3>
+        {rated > 0 ? (
+          <>
+            <div className="ss-row" role="list" aria-label="Rating breakdown">
+              <div className="ss-chip again" role="listitem"><strong>{tally.again}</strong><span>Again</span></div>
+              <div className="ss-chip hard" role="listitem"><strong>{tally.hard}</strong><span>Hard</span></div>
+              <div className="ss-chip good" role="listitem"><strong>{tally.good}</strong><span>Good</span></div>
+              <div className="ss-chip easy" role="listitem"><strong>{tally.easy}</strong><span>Easy</span></div>
+            </div>
+            <div className="ss-meta">
+              {rated} rated · {accuracy}% recalled · ~{mins} min
+              {tally.again > 0 && <> · the {tally.again} you missed come back tomorrow</>}
+            </div>
+          </>
+        ) : (
+          <div style={{ marginBottom: 4 }}>
+            You skimmed through {queue.length} card{queue.length === 1 ? "" : "s"} without rating.
+          </div>
+        )}
+        <button className="primary" onClick={resetSession}>
+          One more round
         </button>
       </div>
     );

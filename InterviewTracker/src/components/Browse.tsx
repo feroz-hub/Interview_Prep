@@ -97,11 +97,17 @@ export default function Browse({
       <div className="glass list-pane">
         <div className="filters">
           <input
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Search questions"
             placeholder={placeholderQ}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <select value={topic} onChange={(e) => setTopic(e.target.value)}>
+          <select aria-label="Filter by topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
             {topics.map((t) => (
               <option key={t} value={t}>
                 {t === "all" ? `All topics (${questions.length})` : t}
@@ -109,6 +115,7 @@ export default function Browse({
             ))}
           </select>
           <select
+            aria-label="Filter by status"
             value={status}
             onChange={(e) => setStatusFilter(e.target.value as Status | "all")}
           >
@@ -117,6 +124,7 @@ export default function Browse({
             ))}
           </select>
           <select
+            aria-label="Filter by confidence"
             value={confidenceFilter}
             onChange={(e) => setConfidenceFilter(e.target.value as "all" | "low" | "unrated")}
             title="Filter by self-rated confidence"

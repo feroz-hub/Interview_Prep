@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+// Self-hosted Inter Variable (single woff2, hashed + cached by Vite).
+import "@fontsource-variable/inter";
 import "./styles/index.css";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);

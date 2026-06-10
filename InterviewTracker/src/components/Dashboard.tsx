@@ -1,16 +1,23 @@
 import { useMemo } from "react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  PieChart, Pie, Cell, Legend
-} from "recharts";
+  BookOpen, BookMarked, CheckCircle2, GraduationCap, Play, Star, Target, Timer,
+} from "lucide-react";
+import { Bars, Donut, StackedBars, type Series } from "./charts";
 import type { AppState, Badge, Course, CourseSession, Question, Track, UdemyAccount } from "../types";
 import { QUESTIONS } from "../data/questions";
 import { streamColor } from "../data/courses";
+import { isDue } from "../lib/sm2";
 import AccountChip, { AccountAvatar } from "./courses/AccountChip";
 import ActivityRing from "./ActivityRing";
 import Constellation from "./Constellation";
 import CountdownPanel from "./CountdownPanel";
 import BadgesShelf from "./BadgesShelf";
+
+const COURSE_STATUS_SERIES: Series[] = [
+  { key: "completed",   label: "Completed",   color: "#22c55e" },
+  { key: "in_progress", label: "In progress", color: "#f59e0b" },
+  { key: "not_started", label: "Not started", color: "#64748b" },
+];
 
 interface Props {
   state: AppState;
@@ -26,6 +33,8 @@ interface Props {
   activeTrack?: Track;
   xp?: number;
   badges?: Badge[];
+  onStartReview?: () => void;
+  onStartStudy?: () => void;
 }
 
 function formatBytes(n: number): string {
@@ -46,6 +55,8 @@ export default function Dashboard({
   activeQuestions,
   activeTrack = "dotnet",
   badges = [],
+  onStartReview,
+  onStartStudy,
 }: Props) {
   const QSET: Question[] = activeQuestions ?? QUESTIONS;
   const stats = useMemo(() => {
@@ -54,6 +65,8 @@ export default function Dashboard({
     const byTopic: Record<string, { total: number; done: number; mastered: number }> = {};
     let totalReviews = 0;
     let totalCorrect = 0;
+    let due = 0;
+    const dueNow = new Date();
 
     for (const q of QSET) {
       const p = state.progress[q.id];
@@ -61,6 +74,7 @@ export default function Dashboard({
       counts[status as keyof typeof counts] += 1;
       totalReviews += p?.reviewCount ?? 0;
       totalCorrect += p?.correctCount ?? 0;
+      if (isDue(p, dueNow)) due += 1;
       if (!byTopic[q.topic]) byTopic[q.topic] = { total: 0, done: 0, mastered: 0 };
       byTopic[q.topic].total += 1;
       if (status === "mastered") { byTopic[q.topic].done += 1; byTopic[q.topic].mastered += 1; }
@@ -114,9 +128,12 @@ export default function Dashboard({
 
     return {
       total, counts, completed, inProgress, started, pct, startedPct,
-      streak, last14, heatmap, topicRows, totalReviews, accuracy,
+      streak, last14, heatmap, topicRows, totalReviews, accuracy, due,
     };
   }, [state, QSET]);
+
+  // PRAGMA-backed now, but still no reason to re-query on unrelated renders.
+  const dbInfo = useMemo(() => dbStats?.(), [dbStats, state]);
 
   const heatLevel = (n: number): number => {
     if (n === 0) return 0;
@@ -129,6 +146,33 @@ export default function Dashboard({
   return (
     <>
       <CountdownPanel track={activeTrack} questions={QSET} state={state} />
+
+      {(onStartReview || onStartStudy) && (
+        <div className="dash-cta glass">
+          <div className="dash-cta-text">
+            {stats.due > 0 ? (
+              <>
+                <strong>{stats.due} card{stats.due === 1 ? "" : "s"} due for review</strong>
+                <span>~{Math.max(1, Math.round((stats.due * 30) / 60))} min to clear — spaced repetition works best on time</span>
+              </>
+            ) : (
+              <>
+                <strong>All caught up — nothing due</strong>
+                <span>{stats.counts.new} untouched question{stats.counts.new === 1 ? "" : "s"} waiting for a first pass</span>
+              </>
+            )}
+          </div>
+          {stats.due > 0 ? (
+            <button className="primary" onClick={onStartReview}>
+              <Play size={14} /> Start review
+            </button>
+          ) : (
+            <button className="primary" onClick={onStartStudy}>
+              <Play size={14} /> Study new cards
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="dash-hero">
         <div className="hero-rings glass">
@@ -199,25 +243,25 @@ export default function Dashboard({
 
       <div className="stat-strip">
         <div className="mini-stat glass">
-          <span className="icon">📚</span>
+          <span className="icon"><BookOpen size={18} /></span>
           <div className="label">Total Questions</div>
           <div className="value">{stats.total}</div>
           <div className="sub">Across {Object.keys(stats.topicRows).length || stats.topicRows.length} topics</div>
         </div>
         <div className="mini-stat glass">
-          <span className="icon">⭐</span>
+          <span className="icon"><Star size={18} /></span>
           <div className="label">Mastered</div>
           <div className="value" style={{ color: "var(--green)" }}>{stats.completed}</div>
           <div className="sub">{stats.pct}% of all</div>
         </div>
         <div className="mini-stat glass">
-          <span className="icon">📖</span>
+          <span className="icon"><BookMarked size={18} /></span>
           <div className="label">Learning</div>
           <div className="value" style={{ color: "var(--yellow)" }}>{stats.counts.learning}</div>
           <div className="sub">In active rotation</div>
         </div>
         <div className="mini-stat glass">
-          <span className="icon">🎯</span>
+          <span className="icon"><Target size={18} /></span>
           <div className="label">Accuracy</div>
           <div className="value" style={{ color: "var(--accent)" }}>{stats.accuracy}%</div>
           <div className="sub">{stats.totalReviews} reviews</div>
@@ -231,31 +275,12 @@ export default function Dashboard({
         </div>
         <div>
           <div className="section-title">Reviews · Last 14 days</div>
-          <div className="glass" style={{ padding: 16, height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.last14}>
-                <defs>
-                  <linearGradient id="bar-grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.95} />
-                    <stop offset="100%" stopColor="var(--accent-2)" stopOpacity={0.7} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="day" stroke="var(--text-3)" fontSize={11} tickLine={false} axisLine={{ stroke: "var(--border)" }} />
-                <YAxis stroke="var(--text-3)" fontSize={11} allowDecimals={false} tickLine={false} axisLine={false} />
-                <Tooltip
-                  cursor={{ fill: "var(--bg-3)" }}
-                  contentStyle={{
-                    background: "var(--bg-1)",
-                    border: "1px solid var(--border-hi)",
-                    borderRadius: 10,
-                    fontSize: 12,
-                    backdropFilter: "blur(20px)",
-                  }}
-                />
-                <Bar dataKey="reviews" fill="url(#bar-grad)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="glass" style={{ padding: 16 }}>
+            <Bars
+              data={stats.last14.map((d) => ({ label: d.day, value: d.reviews }))}
+              height={264}
+              unit="review"
+            />
           </div>
 
           <div className="section-title" style={{ marginTop: 16 }}>Activity · Last 90 days</div>
@@ -313,8 +338,8 @@ export default function Dashboard({
         />
       )}
 
-      {dbStats && (() => {
-        const s = dbStats();
+      {dbInfo && (() => {
+        const s = dbInfo;
         return (
           <div className="glass" style={{ padding: 18, marginTop: 16 }}>
             <div className="section-title" style={{ marginBottom: 10 }}>
@@ -482,13 +507,13 @@ function CoursesPanel({
       <div className="section-title" style={{ marginTop: 18 }}>Courses</div>
       <div className="stat-strip">
         <div className="mini-stat glass">
-          <span className="icon">🎓</span>
+          <span className="icon"><GraduationCap size={18} /></span>
           <div className="label">Courses</div>
           <div className="value">{stats.total}</div>
           <div className="sub">{stats.inProgress} in progress</div>
         </div>
         <div className="mini-stat glass">
-          <span className="icon">⏱</span>
+          <span className="icon"><Timer size={18} /></span>
           <div className="label">Minutes (all time)</div>
           <div className="value" style={{ color: "var(--accent)" }}>{stats.totalMins}</div>
           <div className="sub">{stats.minsThisWeek} this week</div>
@@ -507,7 +532,7 @@ function CoursesPanel({
           <div className="sub">peak {stats.maxDay}m</div>
         </div>
         <div className="mini-stat glass">
-          <span className="icon">✅</span>
+          <span className="icon"><CheckCircle2 size={18} /></span>
           <div className="label">Completed</div>
           <div className="value" style={{ color: "var(--green)" }}>{stats.completed}</div>
           <div className="sub">{stats.total ? Math.round((stats.completed / stats.total) * 100) : 0}% of catalog</div>
@@ -520,51 +545,28 @@ function CoursesPanel({
           {stats.statusPie.length === 0 ? (
             <div className="muted" style={{ fontSize: 12 }}>No courses yet.</div>
           ) : (
-            <div style={{ height: 200 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={stats.statusPie} dataKey="value" nameKey="name" innerRadius={48} outerRadius={72}>
-                    {stats.statusPie.map((d) => (
-                      <Cell key={d.name} fill={d.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--bg-1)",
-                      border: "1px solid var(--border-hi)",
-                      borderRadius: 8,
-                      fontSize: 11,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <Donut
+              slices={stats.statusPie.map((d) => ({ label: d.name, value: d.value, color: d.color }))}
+              centerValue={String(stats.total)}
+              centerLabel="courses"
+            />
           )}
         </div>
 
         <div className="glass panel">
           <h4>By stream</h4>
-          <div style={{ height: 200 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.stacked}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="stream" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-25} textAnchor="end" height={60} />
-                <YAxis stroke="var(--text-3)" fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-1)",
-                    border: "1px solid var(--border-hi)",
-                    borderRadius: 8,
-                    fontSize: 11,
-                  }}
-                />
-                <Bar dataKey="completed"   stackId="a" fill="#22c55e" />
-                <Bar dataKey="in_progress" stackId="a" fill="#f59e0b" />
-                <Bar dataKey="not_started" stackId="a" fill="#64748b" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <StackedBars
+            height={186}
+            series={COURSE_STATUS_SERIES}
+            data={stats.stacked.map((s) => ({
+              label: s.stream,
+              values: {
+                completed: s.completed,
+                in_progress: s.in_progress,
+                not_started: s.not_started,
+              },
+            }))}
+          />
         </div>
 
         <div className="glass panel">
@@ -617,26 +619,18 @@ function CoursesPanel({
         <div className="courses-dash">
           <div className="glass panel" style={{ gridColumn: "span 2" }}>
             <h4>Courses by Udemy account</h4>
-            <div style={{ height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.accountStacked}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={60} />
-                  <YAxis stroke="var(--text-3)" fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--bg-1)",
-                      border: "1px solid var(--border-hi)",
-                      borderRadius: 8,
-                      fontSize: 11,
-                    }}
-                  />
-                  <Bar dataKey="completed"   stackId="a" fill="#22c55e" />
-                  <Bar dataKey="in_progress" stackId="a" fill="#f59e0b" />
-                  <Bar dataKey="not_started" stackId="a" fill="#64748b" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <StackedBars
+              height={206}
+              series={COURSE_STATUS_SERIES}
+              data={stats.accountStacked.map((a) => ({
+                label: a.label,
+                values: {
+                  completed: a.completed,
+                  in_progress: a.in_progress,
+                  not_started: a.not_started,
+                },
+              }))}
+            />
           </div>
 
           <div className="glass panel">

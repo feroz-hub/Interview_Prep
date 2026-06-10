@@ -50,8 +50,11 @@
   --rf-pad-page: clamp(16px, 4vw, 24px);
 
   /* ---- Typography stacks ---- */
-  --rf-font-display: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --rf-font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Inter Variable is self-hosted via @fontsource-variable/inter (main.tsx).
+     Mono rides the system stack — SF Mono / Cascadia / Consolas are excellent
+     and cost zero bytes. */
+  --rf-font-display: "Inter Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --rf-font-mono:    ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
 
   /* ---- Hero number scale ---- */
   --rf-hero-xl: clamp(72px, 18vw, 128px);   /* mastery / streak count */

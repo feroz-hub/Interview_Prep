@@ -922,7 +922,12 @@ export function clearAchievements(): void {
 
 export function dbStats(): { sizeBytes: number; tables: { name: string; rows: number }[] } {
   if (!_db) return { sizeBytes: 0, tables: [] };
-  const data = _db.export();
+  // PRAGMA-based size: page_count × page_size matches the serialized file
+  // size without _db.export()'s full-database copy (which made this O(MB)
+  // per Dashboard render).
+  const pageCount = queryOne<{ page_count: number }>(`PRAGMA page_count`)?.page_count ?? 0;
+  const pageSize = queryOne<{ page_size: number }>(`PRAGMA page_size`)?.page_size ?? 0;
+  const sizeBytes = pageCount * pageSize;
   const tables = [
     "questions",
     "progress",
@@ -940,7 +945,7 @@ export function dbStats(): { sizeBytes: number; tables: { name: string; rows: nu
     const r = queryOne<{ c: number }>(`SELECT COUNT(*) as c FROM ${t}`);
     return { name: t, rows: r?.c ?? 0 };
   });
-  return { sizeBytes: data.byteLength, tables };
+  return { sizeBytes, tables };
 }
 
 // ---------- Meta key-value helpers ----------

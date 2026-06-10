@@ -6,13 +6,8 @@
     <!-- Mobile-first viewport. viewport-fit=cover is required for env(safe-area-inset-*). -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <!-- Editorial type stack: Inter Variable (display) + JetBrains Mono (metadata). -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
-    />
+    <!-- Inter Variable is self-hosted via @fontsource-variable/inter (imported
+         in main.tsx) — no render-blocking third-party font request. -->
 
     <title>Interview Tracker — .NET &amp; Pentest</title>
     <meta name="description" content="Spaced-repetition tracker for 530 .NET and 500 Pentest interview questions. Offline-first, SQLite in the browser, XP and streaks built in." />
