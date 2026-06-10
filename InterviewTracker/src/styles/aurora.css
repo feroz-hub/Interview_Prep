@@ -833,3 +833,11 @@ html.vt-micro::view-transition-new(root) {
   margin-top: 6px;
   text-align: center;
 }
+
+/* ---- 22. Mobile library: lazy row rendering ---- */
+/* The "All" queue mounts up to 530 rows; containment lets the browser skip
+   layout/paint for everything off-screen (same recipe as desktop Browse). */
+.rf-list > li {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 96px;
+}
