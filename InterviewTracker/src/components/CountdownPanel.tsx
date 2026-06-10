@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { AppState, Question, Track } from "../types";
 import { getInterviewDate, setInterviewDate } from "../lib/db";
+import { formatDate } from "../lib/format";
 
 interface Props {
   track: Track;
@@ -98,7 +99,7 @@ export default function CountdownPanel({ track, questions, state }: Props) {
           <div className="countdown-days">
             {stats.daysLeft === 0 ? "Today" : `${stats.daysLeft} day${stats.daysLeft === 1 ? "" : "s"} to go`}
           </div>
-          <div className="countdown-sub">{trackLabel} interview on {new Date(target + "T00:00:00").toLocaleDateString()}</div>
+          <div className="countdown-sub">{trackLabel} interview on {formatDate(new Date(target + "T00:00:00"))}</div>
         </div>
         <div className="countdown-stat">
           <div className="num">{stats.quota ?? "—"}</div>

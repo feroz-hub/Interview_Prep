@@ -2,7 +2,19 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+// Self-hosted Inter Variable (single woff2, hashed + cached by Vite).
+import "@fontsource-variable/inter";
 import "./styles/index.css";
+
+// Offline + instant repeat visits: hashed assets are served cache-first, the
+// shell network-first. Production only — the dev server must stay untouched.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) => {
+      console.warn("SW registration failed:", e);
+    });
+  });
+}
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 

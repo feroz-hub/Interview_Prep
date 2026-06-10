@@ -7,28 +7,38 @@ export type PaletteSelection =
   | { kind: "course"; id: number }
   | { kind: "account"; email: string };
 
+/** A command verb the host app exposes in the palette ("Actions" group). */
+export interface PaletteAction {
+  id: string;
+  label: string;
+  hint?: string;
+  run: () => void;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
   onSelect: (sel: PaletteSelection) => void;
   courses?: Course[];
   accounts?: UdemyAccount[];
+  actions?: PaletteAction[];
   // Active question set (defaults to .NET if not passed, preserving old behavior).
   questions?: Question[];
 }
 
 interface Item {
   key: string;
-  kind: "question" | "course" | "account";
-  id: number;       // 0 for account
+  kind: "question" | "course" | "account" | "action";
+  id: number;       // 0 for account/action
   email?: string;
+  actionId?: string;
   primary: string;
   secondary: string;
   searchHaystack: string;
   iconPrefix: string;
 }
 
-export default function CommandPalette({ open, onClose, onSelect, courses = [], accounts = [], questions }: Props) {
+export default function CommandPalette({ open, onClose, onSelect, courses = [], accounts = [], actions = [], questions }: Props) {
   const QUESTION_CORPUS = questions ?? QUESTIONS;
   const [q, setQ] = useState("");
   const [idx, setIdx] = useState(0);
@@ -45,6 +55,19 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
 
   const corpus = useMemo<Item[]>(() => {
     const out: Item[] = [];
+    // Command verbs first so they surface on an empty query.
+    for (const a of actions) {
+      out.push({
+        key: `action-${a.id}`,
+        kind: "action",
+        id: 0,
+        actionId: a.id,
+        primary: a.label,
+        secondary: a.hint ? `Action · ${a.hint}` : "Action",
+        searchHaystack: (`${a.label} ${a.hint ?? ""} action command`).toLowerCase(),
+        iconPrefix: "⚡",
+      });
+    }
     // Account filter actions
     for (const a of accounts) {
       out.push({
@@ -81,7 +104,18 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
       });
     }
     return out;
-  }, [courses, accounts, QUESTION_CORPUS]);
+  }, [courses, accounts, actions, QUESTION_CORPUS]);
+
+  const runItem = (item: Item) => {
+    if (item.kind === "action") {
+      actions.find((a) => a.id === item.actionId)?.run();
+    } else if (item.kind === "account") {
+      onSelect({ kind: "account", email: item.email! });
+    } else {
+      onSelect({ kind: item.kind, id: item.id });
+    }
+    onClose();
+  };
 
   const results = useMemo<Item[]>(() => {
     if (!q.trim()) return corpus.slice(0, 30);
@@ -97,7 +131,8 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
         score += t.length / (i + 1);
       }
       if (allMatch) {
-        if (item.kind === "account") score *= 1.5;
+        if (item.kind === "action") score *= 2;
+        else if (item.kind === "account") score *= 1.5;
         else if (item.kind === "course") score *= 1.2;
         scored.push({ item, score });
       }
@@ -115,19 +150,13 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
       else if (e.key === "Enter") {
         e.preventDefault();
         const item = results[idx];
-        if (item) {
-          if (item.kind === "account") {
-            onSelect({ kind: "account", email: item.email! });
-          } else {
-            onSelect({ kind: item.kind, id: item.id });
-          }
-          onClose();
-        }
+        if (item) runItem(item);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, results, idx, onSelect, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, results, idx, onSelect, onClose, actions]);
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -145,7 +174,7 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
           <input
             ref={inputRef}
             className="cmd-input"
-            placeholder="Search questions, courses, accounts…"
+            placeholder="Search questions, courses, accounts — or run an action…"
             value={q}
             onChange={e => { setQ(e.target.value); setIdx(0); }}
           />
@@ -159,18 +188,11 @@ export default function CommandPalette({ open, onClose, onSelect, courses = [], 
               data-idx={i}
               className={`cmd-result ${i === idx ? "selected" : ""}`}
               onMouseEnter={() => setIdx(i)}
-              onClick={() => {
-                if (r.kind === "account") {
-                  onSelect({ kind: "account", email: r.email! });
-                } else {
-                  onSelect({ kind: r.kind, id: r.id });
-                }
-                onClose();
-              }}
+              onClick={() => runItem(r)}
             >
               <div className="q">{r.primary}</div>
               <div className="meta">
-                <span style={{ color: r.kind === "course" ? "var(--accent)" : r.kind === "account" ? "var(--yellow)" : undefined }}>
+                <span style={{ color: r.kind === "action" ? "var(--green)" : r.kind === "course" ? "var(--accent)" : r.kind === "account" ? "var(--yellow)" : undefined }}>
                   {r.iconPrefix} {r.secondary}
                 </span>
               </div>

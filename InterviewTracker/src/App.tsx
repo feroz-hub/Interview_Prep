@@ -25,17 +25,34 @@ import MobileHeader from "./components/_rf/MobileHeader";
 import MobileBottomTabBar from "./components/_rf/MobileBottomTabBar";
 import { withViewTransition } from "./lib/viewTransition";
 import { initPointerGlow } from "./lib/pointerGlow";
+import { getInterviewDate, setInterviewDate } from "./lib/db";
+import ShortcutsOverlay from "./components/ShortcutsOverlay";
+import type { PaletteAction } from "./components/CommandPalette";
+import {
+  CalendarClock, Download, Menu, RotateCcw, Search, ShieldHalf, Target, Upload, UserRound,
+} from "lucide-react";
 
-// Views are code-split so the initial chunk stays lean: recharts ships only
-// with Dashboard/Stats, framer-motion only with the views that animate, and
-// the command palette loads the first time it opens.
-const Dashboard = lazy(() => import("./components/Dashboard"));
-const Browse = lazy(() => import("./components/Browse"));
-const Flashcards = lazy(() => import("./components/Flashcards"));
-const CommandPalette = lazy(() => import("./components/CommandPalette"));
-const CoursesList = lazy(() => import("./components/courses/CoursesList"));
-const CourseDetail = lazy(() => import("./components/courses/CourseDetail"));
-const AccountsView = lazy(() => import("./components/courses/AccountsView"));
+// Views are code-split so the initial chunk stays lean. The loader thunks are
+// kept separately from lazy() so nav hover/focus can *preload* a chunk before
+// the click lands (perceived-instant navigation).
+const loaders = {
+  dashboard: () => import("./components/Dashboard"),
+  browse: () => import("./components/Browse"),
+  flashcards: () => import("./components/Flashcards"),
+  palette: () => import("./components/CommandPalette"),
+  courses: () => import("./components/courses/CoursesList"),
+  courseDetail: () => import("./components/courses/CourseDetail"),
+  accounts: () => import("./components/courses/AccountsView"),
+};
+const preload = (k: keyof typeof loaders) => { void loaders[k](); };
+
+const Dashboard = lazy(loaders.dashboard);
+const Browse = lazy(loaders.browse);
+const Flashcards = lazy(loaders.flashcards);
+const CommandPalette = lazy(loaders.palette);
+const CoursesList = lazy(loaders.courses);
+const CourseDetail = lazy(loaders.courseDetail);
+const AccountsView = lazy(loaders.accounts);
 const MobileDashboard = lazy(() => import("./components/_rf/MobileDashboard"));
 const MobileLibraryV2 = lazy(() => import("./components/_rf/MobileLibraryV2"));
 const MobileQuestionDetail = lazy(() => import("./components/_rf/MobileQuestionDetail"));
@@ -54,6 +71,7 @@ export default function App() {
   // The palette chunk is fetched on first open, then stays mounted so its
   // input state and result cache survive close/reopen.
   const [paletteMounted, setPaletteMounted] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [forcedTopic, setForcedTopic] = useState<string | null>(null);
   const [forcedQuestionId, setForcedQuestionId] = useState<number | null>(null);
@@ -229,10 +247,18 @@ export default function App() {
         return;
       }
       if (inField) return;
+      if (e.key === "?") { setShortcutsOpen(true); return; }
+      if (e.key === "t" && e.shiftKey) {
+        setTrack(track === "pentest" ? "dotnet" : "pentest");
+        return;
+      }
+      // Digit nav is suspended inside Study — there 1-4 rate the card.
+      const studying = view === "flashcards" || view === "review";
+      if (studying) return;
       if (e.key === "1") goView("dashboard");
       else if (e.key === "2") goView("browse");
-      else if (e.key === "3") goView("flashcards");
-      else if (e.key === "4") goView("review");
+      else if (e.key === "3") goView("courses");
+      else if (e.key === "4") goView(dueCount > 0 ? "review" : "flashcards");
       else if (e.key === "5") {
         if (e.shiftKey) {
           if (activeCourseId) goView("course-detail");
@@ -241,13 +267,80 @@ export default function App() {
         }
       }
       else if (e.key === "6") goView("accounts");
-      else if (e.key === "t" && e.shiftKey) {
-        setTrack(track === "pentest" ? "dotnet" : "pentest");
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeCourseId, track, setTrack, goView]);
+  }, [activeCourseId, track, setTrack, goView, view, dueCount]);
+
+  // Interview countdown chip — recomputes instantly when a date is set
+  // anywhere (lib/db dispatches interview-date-changed).
+  const [interviewDays, setInterviewDays] = useState<number | null>(null);
+  useEffect(() => {
+    if (!progress.ready) return;
+    const compute = () => {
+      const d = getInterviewDate(track);
+      if (!d) { setInterviewDays(null); return; }
+      setInterviewDays(
+        Math.ceil((new Date(`${d.date}T00:00:00`).getTime() - Date.now()) / 86_400_000)
+      );
+    };
+    compute();
+    window.addEventListener("interview-date-changed", compute);
+    return () => window.removeEventListener("interview-date-changed", compute);
+  }, [progress.ready, track]);
+
+  // Command verbs — ⌘K doubles as a command bar.
+  const paletteActions = useMemo<PaletteAction[]>(() => {
+    const acts: PaletteAction[] = [];
+    const lastCourse = activeCourseId ? courses.getCourseById(activeCourseId) : undefined;
+    acts.push({
+      id: "start-review",
+      label: "Start review session",
+      hint: dueCount > 0 ? `${dueCount} due` : "nothing due — shuffles all",
+      run: () => goView(dueCount > 0 ? "review" : "flashcards"),
+    });
+    if (lastCourse) {
+      acts.push({
+        id: "log-25",
+        label: `Log 25 min to “${lastCourse.title}”`,
+        hint: "Course session",
+        run: () => {
+          courses.logSession(lastCourse.id, null, 25, "Quick log via ⌘K");
+          pushToast({ icon: "📚", title: "Logged 25 minutes", body: lastCourse.title });
+        },
+      });
+    }
+    acts.push({
+      id: "switch-track",
+      label: `Switch track to ${track === "pentest" ? ".NET" : "Pentest"}`,
+      hint: "⇧T",
+      run: () => setTrack(track === "pentest" ? "dotnet" : "pentest"),
+    });
+    ([["midnight", "Midnight"], ["aurora", "Aurora"], ["sunset", "Sunset"], ["mint", "Mint"]] as const)
+      .forEach(([id, label]) => {
+        acts.push({ id: `theme-${id}`, label: `Theme: ${label}`, hint: "Appearance", run: () => setTheme(id) });
+      });
+    ([[7, "+1 week"], [14, "+2 weeks"], [30, "+1 month"]] as const).forEach(([days, label]) => {
+      acts.push({
+        id: `interview-${days}`,
+        label: `Set interview date ${label}`,
+        hint: "Countdown",
+        run: () => {
+          const d = new Date();
+          d.setDate(d.getDate() + days);
+          const iso = d.toISOString().slice(0, 10);
+          setInterviewDate(track, iso);
+          pushToast({ icon: "📅", title: "Interview date set", body: iso });
+        },
+      });
+    });
+    acts.push({ id: "pomodoro", label: "Start Pomodoro", hint: "25 min focus", run: () => pomo.start() });
+    acts.push({ id: "export-db", label: "Export .sqlite", hint: "Download database", run: () => progress.exportSqlite() });
+    acts.push({ id: "import-db", label: "Import .sqlite", hint: "Replace database", run: () => fileRef.current?.click() });
+    acts.push({ id: "shortcuts", label: "Keyboard shortcuts", hint: "?", run: () => setShortcutsOpen(true) });
+    return acts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCourseId, courses, dueCount, goView, pomo, progress, pushToast, setTheme, setTrack, track]);
 
   const onPaletteSelect = (sel:
     | { kind: "question"; id: number }
@@ -322,7 +415,7 @@ export default function App() {
 
   const activeCourse = activeCourseId ? courses.getCourseById(activeCourseId) : undefined;
   const trackName = track === "pentest" ? "Pentest" : ".NET";
-  const trackBrandIcon = track === "pentest" ? "🛡️" : "🎯";
+  const trackBrandIcon = track === "pentest" ? <ShieldHalf size={17} /> : <Target size={17} />;
 
   const importInput = (
     <input
@@ -376,7 +469,7 @@ export default function App() {
               question={detailQ}
               state={progress.state}
               track={track}
-              onBack={() => setActiveQuestionId(null)}
+              onBack={() => withViewTransition(() => setActiveQuestionId(null))}
               onPracticeOne={() => {
                 setSessionFilter({ topic: "all", queue: "all" });
                 setActiveQuestionId(null);
@@ -401,7 +494,7 @@ export default function App() {
                 <MobileLibraryV2
                   questions={activeQuestions}
                   state={progress.state}
-                  onOpenQuestion={(id) => setActiveQuestionId(id)}
+                  onOpenQuestion={(id) => withViewTransition(() => setActiveQuestionId(id))}
                   onStartSession={(f) => {
                     setSessionFilter(f);
                     goView("flashcards");
@@ -438,6 +531,7 @@ export default function App() {
               onSelect={onPaletteSelect}
               courses={courses.courses}
               accounts={accountsApi.accounts}
+              actions={paletteActions}
               questions={activeQuestions}
             />
           </Suspense>
@@ -467,18 +561,19 @@ export default function App() {
             <div className="more-section-label">Database</div>
             <div className="more-actions">
               <button type="button" className="more-action" onClick={() => { progress.exportSqlite(); }}>
-                <span aria-hidden>⬇</span> Export .sqlite
+                <Download size={15} aria-hidden /> Export .sqlite
               </button>
               <button type="button" className="more-action" onClick={() => fileRef.current?.click()}>
-                <span aria-hidden>⬆</span> Import .sqlite
+                <Upload size={15} aria-hidden /> Import .sqlite
               </button>
               <button type="button" className="more-action danger" onClick={() => progress.reset()}>
-                <span aria-hidden>⟲</span> Reset local DB
+                <RotateCcw size={15} aria-hidden /> Reset local DB
               </button>
             </div>
           </div>
         </MoreSheet>
 
+        <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         {importInput}
         <ToastHost toasts={toasts} onDismiss={dismissToast} />
       </>
@@ -521,7 +616,7 @@ export default function App() {
                     onClick={() => setPaletteOpen(true)}
                     aria-label="Search"
                     title="Search"
-                  >⌕</button>
+                  ><Search size={16} aria-hidden /></button>
                   <button
                     type="button"
                     className="icon-btn"
@@ -530,7 +625,7 @@ export default function App() {
                     aria-haspopup="dialog"
                     aria-expanded={moreOpen}
                     title="More"
-                  >☰</button>
+                  ><Menu size={16} aria-hidden /></button>
                 </>
               )}
             </div>
@@ -539,32 +634,55 @@ export default function App() {
           {isDesktop && (
             <div className="topbar-row topbar-row-secondary">
               <nav aria-label="Primary navigation">
-                <button className={view === "dashboard" ? "active" : ""} onClick={() => goView("dashboard")}>
+                <button
+                  className={view === "dashboard" ? "active" : ""}
+                  onClick={() => goView("dashboard")}
+                  onPointerEnter={() => preload("dashboard")}
+                  onFocus={() => preload("dashboard")}
+                >
                   {view === "dashboard" && <span className="nav-pill" aria-hidden />}
-                  Dashboard
+                  Home
                 </button>
-                <button className={view === "browse" ? "active" : ""} onClick={() => goView("browse")}>
+                <button
+                  className={view === "browse" ? "active" : ""}
+                  onClick={() => goView("browse")}
+                  onPointerEnter={() => preload("browse")}
+                  onFocus={() => preload("browse")}
+                >
                   {view === "browse" && <span className="nav-pill" aria-hidden />}
-                  Browse
+                  Library
                 </button>
                 <button
                   className={view === "courses" || view === "course-detail" ? "active" : ""}
                   onClick={() => goView("courses")}
+                  onPointerEnter={() => preload("courses")}
+                  onFocus={() => preload("courses")}
                 >
                   {(view === "courses" || view === "course-detail") && <span className="nav-pill" aria-hidden />}
                   Courses
                 </button>
-                <button className={view === "flashcards" ? "active" : ""} onClick={() => goView("flashcards")}>
-                  {view === "flashcards" && <span className="nav-pill" aria-hidden />}
-                  Flashcards
-                </button>
-                <button className={view === "review" ? "active" : ""} onClick={() => goView("review")}>
-                  {view === "review" && <span className="nav-pill" aria-hidden />}
-                  Review {dueCount > 0 && <span className="badge">{dueCount}</span>}
+                <button
+                  className={view === "flashcards" || view === "review" ? "active" : ""}
+                  onClick={() => goView(dueCount > 0 ? "review" : "flashcards")}
+                  onPointerEnter={() => preload("flashcards")}
+                  onFocus={() => preload("flashcards")}
+                >
+                  {(view === "flashcards" || view === "review") && <span className="nav-pill" aria-hidden />}
+                  Study {dueCount > 0 && <span className="badge">{dueCount}</span>}
                 </button>
               </nav>
 
               <div className="actions">
+                {interviewDays !== null && interviewDays <= 14 && (
+                  <button
+                    className={`countdown-chip${interviewDays <= 3 ? " urgent" : ""}`}
+                    onClick={() => goView("dashboard")}
+                    title="Interview countdown — open Home"
+                  >
+                    <CalendarClock size={13} aria-hidden />
+                    {interviewDays <= 0 ? "Today" : `${interviewDays}d`}
+                  </button>
+                )}
                 <div className="xp-bar-wrap"><XPBar xp={xp} track={track} /></div>
                 <button
                   className={`ghost ${view === "accounts" ? "active" : ""}`}
@@ -583,10 +701,12 @@ export default function App() {
                 <button
                   className="ghost"
                   onClick={() => setPaletteOpen(true)}
+                  onPointerEnter={() => preload("palette")}
+                  onFocus={() => preload("palette")}
                   title="Search · ⌘K"
                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px" }}
                 >
-                  <span>⌕</span>
+                  <Search size={14} aria-hidden />
                   <span style={{ color: "var(--text-3)" }}>Search</span>
                   <span className="kbd">⌘K</span>
                 </button>
@@ -599,9 +719,15 @@ export default function App() {
                   skip={pomo.skip}
                 />
                 <ThemeSwitcher theme={theme} setTheme={setTheme} />
-                <button className="ghost" onClick={progress.exportSqlite} title="Download .sqlite database file">⬇ .sqlite</button>
-                <button className="ghost" onClick={() => fileRef.current?.click()} title="Import .sqlite file">⬆</button>
-                <button className="ghost" onClick={progress.reset} title="Reset progress (wipes SQLite DB)">⟲</button>
+                <button className="ghost icon-text" onClick={progress.exportSqlite} title="Download .sqlite database file">
+                  <Download size={13} aria-hidden /> .sqlite
+                </button>
+                <button className="ghost" onClick={() => fileRef.current?.click()} title="Import .sqlite file" aria-label="Import .sqlite file">
+                  <Upload size={13} aria-hidden />
+                </button>
+                <button className="ghost" onClick={progress.reset} title="Reset progress (wipes SQLite DB)" aria-label="Reset local database">
+                  <RotateCcw size={13} aria-hidden />
+                </button>
               </div>
             </div>
           )}
@@ -623,6 +749,9 @@ export default function App() {
               activeTrack={track}
               xp={xp}
               badges={badges}
+              onStartReview={() => goView("review")}
+              onStartStudy={() => goView("flashcards")}
+              onOpenLibrary={() => goView("browse")}
             />
           )}
           {view === "browse" && (
@@ -637,22 +766,13 @@ export default function App() {
               track={track}
             />
           )}
-          {view === "flashcards" && (
+          {(view === "flashcards" || view === "review") && (
             <Flashcards
               state={progress.state}
               rate={(id, r) => progress.rate(id, r, track)}
               setConfidence={(id, c) => progress.setConfidence(id, c, track)}
-              mode="all"
-              questions={activeQuestions}
-              track={track}
-            />
-          )}
-          {view === "review" && (
-            <Flashcards
-              state={progress.state}
-              rate={(id, r) => progress.rate(id, r, track)}
-              setConfidence={(id, c) => progress.setConfidence(id, c, track)}
-              mode="review"
+              mode={view === "review" ? "review" : "all"}
+              onModeChange={(m) => goView(m === "review" ? "review" : "flashcards")}
               questions={activeQuestions}
               track={track}
             />
@@ -729,6 +849,7 @@ export default function App() {
             onSelect={onPaletteSelect}
             courses={courses.courses}
             accounts={accountsApi.accounts}
+            actions={paletteActions}
             questions={activeQuestions}
           />
         </Suspense>
@@ -764,7 +885,7 @@ export default function App() {
             className="more-action"
             onClick={() => goView("accounts")}
           >
-            <span aria-hidden>👤</span> Manage accounts
+            <UserRound size={15} aria-hidden /> Manage accounts
           </button>
         </div>
 
@@ -772,18 +893,19 @@ export default function App() {
           <div className="more-section-label">Database</div>
           <div className="more-actions">
             <button type="button" className="more-action" onClick={() => { progress.exportSqlite(); }}>
-              <span aria-hidden>⬇</span> Export .sqlite
+              <Download size={15} aria-hidden /> Export .sqlite
             </button>
             <button type="button" className="more-action" onClick={() => fileRef.current?.click()}>
-              <span aria-hidden>⬆</span> Import .sqlite
+              <Upload size={15} aria-hidden /> Import .sqlite
             </button>
             <button type="button" className="more-action danger" onClick={() => progress.reset()}>
-              <span aria-hidden>⟲</span> Reset local DB
+              <RotateCcw size={15} aria-hidden /> Reset local DB
             </button>
           </div>
         </div>
       </MoreSheet>
 
+      <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       {importInput}
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
     </>

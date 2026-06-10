@@ -1,16 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  CartesianGrid,
-} from "recharts";
+import { Bars, Donut } from "../charts";
 import type {
   Course,
   CourseSection,
@@ -405,25 +394,12 @@ export default function CourseDetail({
 
           <div className="glass chart-card">
             <h4>Minutes · last 30 days</h4>
-            <div style={{ height: 160 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sessionsByDay}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" stroke="var(--text-3)" fontSize={9} tickLine={false} axisLine={false} interval={4} />
-                  <YAxis stroke="var(--text-3)" fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    cursor={{ fill: "var(--bg-3)" }}
-                    contentStyle={{
-                      background: "var(--bg-1)",
-                      border: "1px solid var(--border-hi)",
-                      borderRadius: 8,
-                      fontSize: 11,
-                    }}
-                  />
-                  <Bar dataKey="minutes" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <Bars
+              data={sessionsByDay.map((d) => ({ label: d.day, value: d.minutes }))}
+              height={150}
+              labelEvery={5}
+              unit="min"
+            />
           </div>
 
           <div className="glass chart-card">
@@ -431,47 +407,27 @@ export default function CourseDetail({
             {totalTopics === 0 ? (
               <div className="muted" style={{ fontSize: 12 }}>No topics yet.</div>
             ) : (
-              <div style={{ height: 160 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={topicPie} dataKey="value" nameKey="name" innerRadius={36} outerRadius={56}>
-                      {topicPie.map((d) => (
-                        <Cell key={d.name} fill={PIE_COLORS[d.name as TopicStatus]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--bg-1)",
-                        border: "1px solid var(--border-hi)",
-                        borderRadius: 8,
-                        fontSize: 11,
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <Donut
+                size={104}
+                slices={topicPie.map((d) => ({
+                  label: d.name.replace("_", " "),
+                  value: d.value,
+                  color: PIE_COLORS[d.name as TopicStatus],
+                }))}
+                centerValue={String(totalTopics)}
+                centerLabel="topics"
+              />
             )}
           </div>
 
           <div className="glass chart-card">
             <h4>Mastery ratings</h4>
-            <div style={{ height: 140 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ratingHistogram}>
-                  <XAxis dataKey="rating" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--text-3)" fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--bg-1)",
-                      border: "1px solid var(--border-hi)",
-                      borderRadius: 8,
-                      fontSize: 11,
-                    }}
-                  />
-                  <Bar dataKey="count" fill="var(--yellow)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <Bars
+              data={ratingHistogram.map((d) => ({ label: d.rating, value: d.count }))}
+              height={120}
+              labelEvery={1}
+              unit="topic"
+            />
           </div>
         </aside>
       </div>

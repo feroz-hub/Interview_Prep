@@ -490,3 +490,346 @@ input { caret-color: var(--accent); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- 17. Charts (dependency-free, replaces recharts) ---- */
+.ch { display: flex; flex-direction: column; gap: 6px; position: relative; }
+.ch-max {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  font-size: 10px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.ch-bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 0;
+  background-image: repeating-linear-gradient(
+    to top,
+    transparent 0,
+    transparent calc(25% - 1px),
+    var(--border) calc(25% - 1px),
+    var(--border) 25%
+  );
+}
+.ch-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.ch-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  box-shadow: 0 6px 16px -8px var(--accent-glow);
+  transition: filter 0.15s var(--ease-std), transform 0.15s var(--ease-out);
+}
+.ch-bar[data-zero] { background: var(--bg-3); box-shadow: none; }
+.ch-col:hover .ch-bar { filter: brightness(1.2) saturate(1.1); }
+.ch-stack {
+  width: 100%;
+  min-height: 2px;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 6px 6px 2px 2px;
+  overflow: hidden;
+  transition: filter 0.15s var(--ease-std);
+}
+.ch-col:hover .ch-stack { filter: brightness(1.15); }
+.ch-seg { width: 100%; min-height: 2px; }
+.ch-x { display: flex; gap: 6px; font-size: 9.5px; color: var(--text-3); }
+.ch-x span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ch-x-tilt span { font-size: 9px; }
+.ch-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 10.5px;
+  color: var(--text-2);
+}
+.ch-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.ch-legend-item i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+.ch-legend-item strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.ch-donut-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.ch-donut {
+  position: relative;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-shadow: var(--elev-1);
+}
+.ch-donut-center {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: var(--bg-0);
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+.ch-donut-center strong { font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ch-donut-center span {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+}
+.ch-donut-wrap .ch-legend { flex-direction: column; gap: 6px; }
+
+/* ---- 18. Dashboard CTA ---- */
+.dash-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-xl);
+  border-left: 3px solid var(--accent);
+}
+.dash-cta-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dash-cta-text strong { font-size: 15px; }
+.dash-cta-text span { font-size: 12px; color: var(--text-2); }
+.dash-cta button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 10px 18px;
+}
+
+/* ---- 19. Session summary + inline icons ---- */
+.session-summary .ss-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.ss-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 76px;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.ss-chip strong { font-size: 20px; font-variant-numeric: tabular-nums; color: var(--text); }
+.ss-chip span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-2);
+  font-weight: 700;
+}
+.ss-chip.again strong { color: var(--red); }
+.ss-chip.hard  strong { color: var(--yellow); }
+.ss-chip.good  strong { color: var(--accent); }
+.ss-chip.easy  strong { color: var(--green); }
+.session-summary .ss-meta { font-size: 12.5px; color: var(--text-2); margin-bottom: 16px; }
+
+/* Lucide icons: optical alignment inside text buttons and KPI tiles. */
+button svg { flex: none; vertical-align: -2px; }
+button.icon-text { display: inline-flex; align-items: center; gap: 6px; }
+.brand-icon svg, .rf-mobile-brand-icon svg { display: block; }
+.mini-stat .icon svg { color: var(--accent); }
+.more-action svg { vertical-align: -3px; margin-right: 2px; }
+
+/* ---- 20. Phase 2: countdown chip, study switch, shortcuts, onboarding ---- */
+.countdown-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radius-pill);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.countdown-chip.urgent {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+  border-color: color-mix(in srgb, var(--red) 40%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .countdown-chip.urgent { animation: chip-pulse 2.4s var(--ease-std) infinite; }
+}
+@keyframes chip-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 35%, transparent); }
+  50%      { box-shadow: 0 0 0 5px transparent; }
+}
+
+.study-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.study-switch button {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  color: var(--text-2);
+  backdrop-filter: none;
+}
+.study-switch button:hover { transform: none; color: var(--text); }
+.study-switch button.active {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 30%, transparent),
+    color-mix(in srgb, var(--accent-2) 24%, transparent)
+  );
+  border: none;
+  color: var(--text);
+  box-shadow: 0 4px 14px -6px var(--accent-glow);
+}
+
+.shortcuts-modal {
+  width: 100%;
+  max-width: 560px;
+  height: fit-content;
+  max-height: 76vh;
+  overflow-y: auto;
+  background: var(--bg-1);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  box-shadow: var(--glass-hi), var(--elev-3);
+  padding: 20px 22px;
+  outline: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shortcuts-modal { animation: vt-enter 0.24s var(--ease-out); }
+}
+.shortcuts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.shortcuts-head h3 { font-size: 15px; }
+.shortcuts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 26px; }
+@media (max-width: 39.99em) { .shortcuts-grid { grid-template-columns: 1fr; } }
+.shortcuts-grid h4 {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.shortcut-keys { display: inline-flex; gap: 3px; align-items: center; flex: none; }
+.shortcut-keys i { color: var(--text-3); font-style: normal; padding: 0 1px; }
+.shortcut-what { text-align: right; }
+
+.onboard {
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-xl);
+}
+.onboard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.onboard-head strong { font-size: 14.5px; }
+.onboard-x { padding: 4px 8px; }
+.onboard-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 47.99em) { .onboard-steps { grid-template-columns: 1fr; } }
+.onboard-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  backdrop-filter: none;
+  font: inherit;
+}
+button.onboard-step:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-hi));
+  transform: translateY(-2px);
+}
+.onboard-n {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.onboard-step strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.onboard-step span:not(.onboard-n) { font-size: 11.5px; color: var(--text-2); line-height: 1.45; }
+
+/* ---- 21. Phase 3: micro view-transitions + Flashcards declassing ---- */
+/* In-view transitions (Browse row → detail) suppress the full-document
+   leave/enter so only named elements morph. withViewTransition({micro})
+   toggles this class for the duration of the transition. */
+html.vt-micro::view-transition-old(root),
+html.vt-micro::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+.browse .detail { view-transition-name: browse-detail; }
+
+.flashcard-3d { cursor: pointer; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.fc-keys { gap: 6px; }
+.fc-note { margin-bottom: 16px; }
+.ss-skim { margin-bottom: 4px; }
+.fc-hint {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-top: 12px;
+}
+.fc-actions { display: flex; gap: 10px; width: 100%; }
+.fc-reveal { flex: 1; padding: 16px; font-size: 14px; }
+.fc-skip { padding: 0 18px; }
+.fc-confidence { margin-top: 10px; }
+.fc-footnote {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 6px;
+  text-align: center;
+}

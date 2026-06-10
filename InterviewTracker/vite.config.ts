@@ -8,12 +8,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Stable vendor chunks: the app shell stays small and long-cached,
-        // recharts ships only when Dashboard loads, framer-motion only with
-        // the views that animate.
+        // Stable vendor chunks: the app shell stays small and long-cached;
+        // framer-motion ships only with the views that animate.
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-recharts": ["recharts"],
           "vendor-motion": ["framer-motion"],
         },
       },

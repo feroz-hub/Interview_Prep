@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { BarChart3, Home, LibraryBig, PenLine } from "lucide-react";
 import type { View } from "../../types";
 
 interface Props {
@@ -9,14 +11,16 @@ interface Props {
 interface Tab {
   id: View;
   label: string;
-  icon: string;
+  icon: ReactNode;
 }
 
+// Unified nav vocabulary (v3): Home / Library / Study / Progress — the same
+// words the desktop top bar uses.
 const TABS: ReadonlyArray<Tab> = [
-  { id: "dashboard",  label: "Home",    icon: "◎" },
-  { id: "library",    label: "Library", icon: "❐" },
-  { id: "flashcards", label: "Session", icon: "✎" },
-  { id: "review",     label: "Stats",   icon: "◫" },
+  { id: "dashboard",  label: "Home",     icon: <Home size={22} /> },
+  { id: "library",    label: "Library",  icon: <LibraryBig size={22} /> },
+  { id: "flashcards", label: "Study",    icon: <PenLine size={22} /> },
+  { id: "review",     label: "Progress", icon: <BarChart3 size={22} /> },
 ];
 
 /**

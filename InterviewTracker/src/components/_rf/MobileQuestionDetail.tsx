@@ -7,6 +7,7 @@ import StatusSegmentedControl from "./StatusSegmentedControl";
 import ConfidenceSlider from "./ConfidenceSlider";
 import { defaultProgress } from "../../lib/sm2";
 import { loadReviewLogForQuestion, setQuestionSaved } from "../../lib/db";
+import { formatDate } from "../../lib/format";
 import type { ReviewLog } from "../../types";
 
 interface Props {
@@ -167,7 +168,7 @@ export default function MobileQuestionDetail({
                 {history.map((h) => (
                   <li key={h.id} className="rf-history-row">
                     <span className="rf-mono">
-                      {new Date(h.ratedAt).toLocaleDateString()}
+                      {formatDate(h.ratedAt)}
                     </span>
                     <span className={`rf-rating-chip rating-${h.rating}`}>{h.rating}</span>
                     <span className="rf-mono rf-ink-3">

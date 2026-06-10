@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Track } from "../../types";
 import { getInterviewDate, setInterviewDate } from "../../lib/db";
+import { formatDate } from "../../lib/format";
 import Card from "./Card";
 
 interface Props {
@@ -47,7 +48,7 @@ export default function InterviewDateCard({ track }: Props) {
           <div className="rf-label">Interview in</div>
           <div className="rf-metric-row" aria-live="polite">
             <span className="rf-hero lg">{daysLeft}</span>
-            <span className="rf-hero-suffix">days · {t.toLocaleDateString()}</span>
+            <span className="rf-hero-suffix">days · {formatDate(t)}</span>
           </div>
           <div className="rf-cluster">
             <button type="button" className="rf-ghost-btn" onClick={() => setTarget(null)}>

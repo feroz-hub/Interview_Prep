@@ -1,3 +1,4 @@
+import { Menu, Search, ShieldHalf, Target } from "lucide-react";
 import type { Track } from "../../types";
 import TrackSwitcher from "../TrackSwitcher";
 
@@ -23,7 +24,9 @@ export default function MobileHeader({
     <header className="rf-mobile-header" role="banner">
       <div className="rf-mobile-header-row">
         <div className="rf-mobile-brand">
-          <span className="rf-mobile-brand-icon" aria-hidden>{track === "pentest" ? "◢" : "◎"}</span>
+          <span className="rf-mobile-brand-icon" aria-hidden>
+            {track === "pentest" ? <ShieldHalf size={16} /> : <Target size={16} />}
+          </span>
           <span className="rf-mobile-brand-text">{trackTitle}</span>
         </div>
         <div className="rf-mobile-header-actions">
@@ -32,14 +35,14 @@ export default function MobileHeader({
             className="rf-icon-btn"
             onClick={onOpenSearch}
             aria-label="Search"
-          >⌕</button>
+          ><Search size={18} aria-hidden /></button>
           <button
             type="button"
             className="rf-icon-btn"
             onClick={onOpenMore}
             aria-label="More"
             aria-haspopup="dialog"
-          >☰</button>
+          ><Menu size={18} aria-hidden /></button>
         </div>
       </div>
       <div className="rf-mobile-header-row track-row">

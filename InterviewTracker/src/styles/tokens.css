@@ -167,3 +167,23 @@
   --z-modal:   100;
   --z-toast:   200;
 }
+
+/* ============================================================
+   Semantic aliases (v3). Prefer these in NEW code; the raw
+   --bg- and --text- names stay valid (extend-only contract).
+   Aliases resolve dynamically, so they follow theme + track.
+   ============================================================ */
+:root {
+  --surface-0: var(--bg-0);
+  --surface-1: var(--bg-1);
+  --surface-2: var(--bg-2);
+  --surface-3: var(--bg-3);
+
+  --ink-1: var(--text);
+  --ink-2: var(--text-2);
+  --ink-3: var(--text-3);
+
+  --signal-success: var(--green);
+  --signal-warn:    var(--yellow);
+  --signal-danger:  var(--red);
+}

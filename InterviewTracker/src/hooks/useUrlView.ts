@@ -7,9 +7,11 @@ const PATH_TO_VIEW: Record<string, View> = {
   "/": "dashboard",
   "/home": "dashboard",
   "/library": "library",
-  "/session": "flashcards",   // Study
-  "/stats": "dashboard",      // Stats reuses dashboard for now
-  "/review": "review",
+  "/study": "flashcards",    // Study (unified nav, v3)
+  "/session": "flashcards",  // legacy alias
+  "/progress": "review",     // Progress (unified nav, v3)
+  "/stats": "dashboard",     // Stats reuses dashboard for now
+  "/review": "review",       // legacy alias
   "/accounts": "accounts",
 };
 
@@ -17,8 +19,8 @@ const VIEW_TO_PATH: Record<View, string> = {
   dashboard: "/",
   browse: "/library",
   library: "/library",
-  flashcards: "/session",
-  review: "/review",
+  flashcards: "/study",
+  review: "/progress",
   courses: "/library",
   "course-detail": "/library",
   accounts: "/accounts",

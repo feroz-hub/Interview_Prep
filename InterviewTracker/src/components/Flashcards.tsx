@@ -8,11 +8,17 @@ interface FlashcardsProps {
   rate: (id: number, r: Rating) => void;
   setConfidence: (id: number, c: Confidence) => void;
   mode: "all" | "review";
+  /** When provided, the unified Study view shows a Due/Shuffle queue switch. */
+  onModeChange?: (m: "all" | "review") => void;
   questions: Question[];
   track: Track;
 }
 
-export default function Flashcards({ state, rate, setConfidence, mode, questions, track }: FlashcardsProps) {
+export default function Flashcards({ state, rate, setConfidence, mode, onModeChange, questions, track }: FlashcardsProps) {
+  const dueCount = useMemo(() => {
+    const now = new Date();
+    return questions.filter((q) => isDue(state.progress[q.id], now)).length;
+  }, [questions, state]);
   const queue = useMemo(() => {
     if (mode === "review") {
       const now = new Date();
@@ -31,8 +37,20 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   const [flipped, setFlipped] = useState(false);
   const [focus, setFocus] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  // Per-session rating tally + start time, feeding the completion summary.
+  const [tally, setTally] = useState<Record<Rating, number>>({ again: 0, hard: 0, good: 0, easy: 0 });
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
-  useEffect(() => { setIdx(0); setFlipped(false); setShowAnswer(false); }, [queue, track]);
+  const resetSession = () => {
+    setIdx(0);
+    setFlipped(false);
+    setShowAnswer(false);
+    setTally({ again: 0, hard: 0, good: 0, easy: 0 });
+    setStartedAt(Date.now());
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { resetSession(); }, [queue, track]);
 
   const current = queue[idx];
   const progress = current ? (state.progress[current.id] ?? defaultProgress()) : null;
@@ -40,6 +58,7 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   const onRate = (r: Rating) => {
     if (!current) return;
     rate(current.id, r);
+    setTally((t) => ({ ...t, [r]: t[r] + 1 }));
     setFlipped(false);
     setShowAnswer(false);
     setTimeout(() => setIdx((i) => i + 1), 250);
@@ -76,25 +95,48 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
       <div className="empty">
         <div className="icon">{mode === "review" ? "🎉" : "📭"}</div>
         <h3>{mode === "review" ? "Nothing due for review" : "No questions"}</h3>
-        <div>
+        <div className="fc-note">
           {mode === "review"
-            ? "All caught up. Use the Flashcards tab to study fresh ones."
+            ? "All caught up — every scheduled card is done for now."
             : "Something went wrong loading questions."}
         </div>
+        {mode === "review" && onModeChange && (
+          <button className="primary" onClick={() => onModeChange("all")}>
+            Shuffle all cards instead
+          </button>
+        )}
       </div>
     );
   }
 
   if (idx >= queue.length) {
+    const rated = tally.again + tally.hard + tally.good + tally.easy;
+    const accuracy = rated ? Math.round(((tally.good + tally.easy) / rated) * 100) : 0;
+    const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
     return (
-      <div className="empty">
+      <div className="empty session-summary">
         <div className="icon">🎉</div>
-        <h3>Session complete!</h3>
-        <div style={{ marginBottom: 16 }}>
-          You went through {queue.length} card{queue.length === 1 ? "" : "s"}. Great work.
-        </div>
-        <button className="primary" onClick={() => { setIdx(0); setFlipped(false); setShowAnswer(false); }}>
-          Start over
+        <h3>Session complete</h3>
+        {rated > 0 ? (
+          <>
+            <div className="ss-row" role="list" aria-label="Rating breakdown">
+              <div className="ss-chip again" role="listitem"><strong>{tally.again}</strong><span>Again</span></div>
+              <div className="ss-chip hard" role="listitem"><strong>{tally.hard}</strong><span>Hard</span></div>
+              <div className="ss-chip good" role="listitem"><strong>{tally.good}</strong><span>Good</span></div>
+              <div className="ss-chip easy" role="listitem"><strong>{tally.easy}</strong><span>Easy</span></div>
+            </div>
+            <div className="ss-meta">
+              {rated} rated · {accuracy}% recalled · ~{mins} min
+              {tally.again > 0 && <> · the {tally.again} you missed come back tomorrow</>}
+            </div>
+          </>
+        ) : (
+          <div className="ss-skim">
+            You skimmed through {queue.length} card{queue.length === 1 ? "" : "s"} without rating.
+          </div>
+        )}
+        <button className="primary" onClick={resetSession}>
+          One more round
         </button>
       </div>
     );
@@ -105,13 +147,35 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
   return (
     <div className={`flashcard-view ${focus ? "focus" : ""}`}>
       <div className="flashcard-progress">
-        <span>{mode === "review" ? "Review" : "Study"} · {idx + 1}/{queue.length} · {track === "pentest" ? "🛡️ Pentest" : "🟦 .NET"}</span>
+        {onModeChange ? (
+          <div className="study-switch" role="tablist" aria-label="Study queue">
+            <button
+              role="tab"
+              aria-selected={mode === "review"}
+              className={mode === "review" ? "active" : ""}
+              onClick={() => onModeChange("review")}
+            >
+              Due{dueCount > 0 ? ` · ${dueCount}` : ""}
+            </button>
+            <button
+              role="tab"
+              aria-selected={mode === "all"}
+              className={mode === "all" ? "active" : ""}
+              onClick={() => onModeChange("all")}
+            >
+              Shuffle all
+            </button>
+          </div>
+        ) : (
+          <span>{mode === "review" ? "Review" : "Study"}</span>
+        )}
+        <span>{idx + 1}/{queue.length} · {track === "pentest" ? "🛡️ Pentest" : "🟦 .NET"}</span>
         <div className="progress-mini"><div className="fill" style={{ width: `${progressPct}%` }} /></div>
-        <div className="row" style={{ gap: 6 }}>
+        <div className="row fc-keys">
           <span><span className="kbd">Space</span> flip</span>
           <span><span className="kbd">A</span> answer</span>
           <span><span className="kbd">→</span> skip</span>
-          <button className="ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => setFocus((f) => !f)} title="Focus / Zen mode (⌘F)">
+          <button className="ghost btn-sm" onClick={() => setFocus((f) => !f)} title="Focus / Zen mode (⌘F)">
             {focus ? "Exit focus" : "Focus mode"}
           </button>
         </div>
@@ -123,12 +187,11 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
           key={current.id}
           className={`flashcard-3d ${flipped ? "flipped" : ""}`}
           onClick={() => setFlipped((f) => !f)}
-          style={{ cursor: "pointer" }}
         >
           <div className="flashcard-face front">
             <span className="topic-tag">{current.topic}</span>
             <div className="question">{current.question}</div>
-            <div style={{ textAlign: "center", color: "var(--text-3)", fontSize: 12, marginTop: 12 }}>
+            <div className="fc-hint">
               Click card or press <span className="kbd">Space</span> to reveal your answer
               {current.answer && (
                 <> · press <span className="kbd">A</span> for the suggested answer</>
@@ -155,11 +218,11 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
       )}
 
       {!flipped ? (
-        <div style={{ display: "flex", gap: 10, width: "100%" }}>
-          <button className="primary" style={{ flex: 1, padding: 16, fontSize: 14 }} onClick={() => setFlipped(true)}>
+        <div className="fc-actions">
+          <button className="primary fc-reveal" onClick={() => setFlipped(true)}>
             Reveal answer
           </button>
-          <button onClick={skip} style={{ padding: "0 18px" }}>Skip →</button>
+          <button className="fc-skip" onClick={skip}>Skip →</button>
         </div>
       ) : (
         <>
@@ -182,7 +245,7 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
             </button>
           </div>
           {current && (
-            <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 10 }}>
+            <div className="fc-confidence" onClick={(e) => e.stopPropagation()}>
               <ConfidenceSlider
                 value={(progress?.confidence ?? 0) as Confidence}
                 onChange={(c) => setConfidence(current.id, c)}
@@ -193,7 +256,7 @@ export default function Flashcards({ state, rate, setConfidence, mode, questions
         </>
       )}
 
-      <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 6, textAlign: "center" }}>
+      <div className="fc-footnote">
         Rate <span className="kbd">1</span> Again · <span className="kbd">2</span> Hard · <span className="kbd">3</span> Good · <span className="kbd">4</span> Easy
       </div>
     </div>
