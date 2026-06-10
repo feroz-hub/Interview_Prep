@@ -461,11 +461,18 @@ function seedAccounts(d: Database) {
   stmt.free();
 }
 
-function seedCourses(d: Database) {
+function seedCourses(d: Database): boolean {
+  let wrote = false;
   const stmt = d.prepare(
     `INSERT OR IGNORE INTO courses
        (title, stream, platform, progress_pct, status, priority, account_email)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
+  );
+  // Backfill ownership on rows that predate the account columns in the source
+  // sheet. Only fills NULL so an assignment made in-app is never overwritten.
+  const backfill = d.prepare(
+    `UPDATE courses SET account_email = ?, updated_at = datetime('now')
+      WHERE title = ? AND account_email IS NULL`
   );
   d.run("BEGIN");
   for (const c of SEED_COURSES) {
@@ -484,9 +491,16 @@ function seedCourses(d: Database) {
       3,
       c.accountEmail ?? null,
     ]);
+    if (d.getRowsModified() > 0) wrote = true;
+    if (c.accountEmail) {
+      backfill.run([c.accountEmail, c.title]);
+      if (d.getRowsModified() > 0) wrote = true;
+    }
   }
   d.run("COMMIT");
   stmt.free();
+  backfill.free();
+  return wrote;
 }
 
 async function seedQuestions(d: Database): Promise<boolean> {
@@ -659,9 +673,9 @@ async function initDbInner(): Promise<Database> {
       const vAfter = getSchemaVersion(_db);
       const seedWrote = await seedQuestions(_db); // fast-paths when already-seeded
       seedAccounts(_db);
-      seedCourses(_db);
+      const coursesWrote = seedCourses(_db);
       migrated = vAfter > vBefore;
-      mutated = migrated || seedWrote;
+      mutated = migrated || seedWrote || coursesWrote;
     } else {
       _db = new SQL.Database();
       createSchema(_db);
