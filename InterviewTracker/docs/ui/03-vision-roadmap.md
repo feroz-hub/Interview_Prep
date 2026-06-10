@@ -47,15 +47,47 @@ coherence and responsiveness to attention — not more effects.
   in production only. Fixed `vercel.json` rewrites that were swallowing
   `/manifest.webmanifest` (live bug) and would have swallowed `/sw.js`.
 
-## Phase 3 (system)
+## Phase 3 (system) — shipped
 
-- Merge `--*` and `--rf-*` token namespaces into one semantic layer
-  (OKLCH ramps, `--surface-*` / `--ink-*` / `--signal-*`), `data-density`.
-- Adopt `_primitives` (Stack/Cluster/Grid/Container) view-by-view to retire
-  the ~236 inline `style={{}}` sites.
-- Element-level view-transition morphs (Browse row → detail).
-- i18n extraction (typed messages module, `Intl.*` formatting).
-- Move debounced `persistNow()` export to a Web Worker if profiling shows jank.
+- ✅ **Token unification (bridge architecture).** `rf-tokens.css` colour
+  tokens are now semantic aliases of the core theme tokens instead of a
+  second hardcoded palette — the mobile RF UI follows all four themes and
+  the pentest track accent for the first time (it was locked to
+  near-black + purple). Layout/type/motion RF tokens stay RF-specific by
+  design. `tokens.css` gains the semantic layer for new code:
+  `--surface-0..3`, `--ink-1..3`, `--signal-success/warn/danger`.
+- ✅ **Element-level morphs.** `withViewTransition(update, { micro: true })`
+  suppresses the document-level animation (`html.vt-micro` gate) so only
+  named elements morph. First use: Browse row → detail pane
+  (`view-transition-name: browse-detail`). Mobile question open/close also
+  runs through a view transition now.
+- ✅ **Intl formatting layer** (`lib/format.ts`): `formatDate`,
+  `formatRelativeDays` ("Next review: in 3 days"), `formatNumber` — adopted
+  in Browse, CountdownPanel, InterviewDateCard, MobileQuestionDetail.
+- ✅ **Inline-style retirement, exemplar pass.** Flashcards: 12 → 1
+  (the one left is the legitimately dynamic progress width). Pattern:
+  utility/component classes in the aurora layer. Remaining heavy files
+  (Dashboard 56, CourseDetail 44, CoursesList 31) follow the same recipe
+  view-by-view.
+- ✅ **Idle-scheduled persistence**: the debounced IndexedDB write now runs
+  in `requestIdleCallback` (2 s timeout guard) so the DB serialize never
+  competes with an interaction.
+
+### Deliberately deferred (with reasons)
+
+- **`data-density` modes** — tokens are ready, but no consumer demand yet;
+  shipping a half-wired toggle is worse than none. Revisit with a real
+  compact-layout request.
+- **Full string extraction (messages module)** — premature until a second
+  locale is actually wanted; the `Intl` formatter layer was the part with
+  immediate user value. ~200 static strings remain in-component.
+- **Web Worker persistence** — the roadmap's own condition ("if profiling
+  shows jank") can't be met in a containerized session; idle scheduling
+  removes the practical risk at 1/20th the complexity. Re-open if traces
+  show export() blocking input.
+- **OKLCH ramp regeneration** — the semantic alias layer landed; converting
+  theme palettes to generated OKLCH ramps is a colour-design exercise best
+  done with eyes on screen.
 
 ## Guardrails (Phase 2+)
 

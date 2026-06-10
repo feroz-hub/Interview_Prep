@@ -719,7 +719,15 @@ async function persistNow(): Promise<void> {
 export function persistDebounced(delay = 350): void {
   if (saveTimer) window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
-    persistNow().catch((e) => console.error("Persist failed:", e));
+    // The export() serialize is the only main-thread cost here; run it when
+    // the browser is idle so it never competes with an interaction. The
+    // timeout guarantees persistence even on a busy tab.
+    const job = () => { persistNow().catch((e) => console.error("Persist failed:", e)); };
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => job(), { timeout: 2000 });
+    } else {
+      job();
+    }
   }, delay);
 }
 

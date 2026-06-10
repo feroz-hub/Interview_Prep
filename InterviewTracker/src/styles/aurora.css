@@ -800,3 +800,36 @@ button.onboard-step:hover {
 }
 .onboard-step strong { display: block; font-size: 13px; margin-bottom: 2px; }
 .onboard-step span:not(.onboard-n) { font-size: 11.5px; color: var(--text-2); line-height: 1.45; }
+
+/* ---- 21. Phase 3: micro view-transitions + Flashcards declassing ---- */
+/* In-view transitions (Browse row → detail) suppress the full-document
+   leave/enter so only named elements morph. withViewTransition({micro})
+   toggles this class for the duration of the transition. */
+html.vt-micro::view-transition-old(root),
+html.vt-micro::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+.browse .detail { view-transition-name: browse-detail; }
+
+.flashcard-3d { cursor: pointer; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.fc-keys { gap: 6px; }
+.fc-note { margin-bottom: 16px; }
+.ss-skim { margin-bottom: 4px; }
+.fc-hint {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-top: 12px;
+}
+.fc-actions { display: flex; gap: 10px; width: 100%; }
+.fc-reveal { flex: 1; padding: 16px; font-size: 14px; }
+.fc-skip { padding: 0 18px; }
+.fc-confidence { margin-top: 10px; }
+.fc-footnote {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 6px;
+  text-align: center;
+}

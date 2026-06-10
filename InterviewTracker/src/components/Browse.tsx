@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AppState, Confidence, Question, Status, Track } from "../types";
 import { defaultProgress } from "../lib/sm2";
+import { withViewTransition } from "../lib/viewTransition";
+import { formatDate, formatRelativeDays } from "../lib/format";
 import ConfidenceSlider from "./_rf/ConfidenceSlider";
 import StatusSegmentedControl from "./_rf/StatusSegmentedControl";
 
@@ -145,7 +147,7 @@ export default function Browse({
               <div
                 key={q.id}
                 className={`list-item ${selectedId === q.id ? "active" : ""}`}
-                onClick={() => setSelectedId(q.id)}
+                onClick={() => withViewTransition(() => setSelectedId(q.id), { micro: true })}
               >
                 <div>
                   <span className={`status-dot ${st}`}></span>
@@ -194,10 +196,10 @@ export default function Browse({
               <span>Reviews: <strong>{sp.reviewCount}</strong></span>
               <span>Correct: <strong>{sp.correctCount}</strong></span>
               {sp.lastReviewed && (
-                <span>Last reviewed: <strong>{new Date(sp.lastReviewed).toLocaleDateString()}</strong></span>
+                <span>Last reviewed: <strong>{formatDate(sp.lastReviewed)}</strong></span>
               )}
               {sp.nextReview && (
-                <span>Next review: <strong>{new Date(sp.nextReview).toLocaleDateString()}</strong></span>
+                <span>Next review: <strong>{formatRelativeDays(sp.nextReview)}</strong></span>
               )}
             </div>
 

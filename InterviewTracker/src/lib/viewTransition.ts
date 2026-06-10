@@ -1,7 +1,11 @@
 import { flushSync } from "react-dom";
 
+interface ViewTransitionHandle {
+  finished?: Promise<void>;
+}
+
 type VTDocument = Document & {
-  startViewTransition?: (update: () => void | Promise<void>) => unknown;
+  startViewTransition?: (update: () => void | Promise<void>) => ViewTransitionHandle;
 };
 
 let reduceQuery: MediaQueryList | null = null;
@@ -18,14 +22,25 @@ function prefersReducedMotion(): boolean {
  * Falls back to a plain update on unsupported browsers or when the user
  * prefers reduced motion. flushSync is required so the DOM is committed
  * before the browser snapshots the "new" state.
+ *
+ * `micro: true` is for in-view transitions (e.g. Browse row → detail pane):
+ * it suppresses the full-document leave/enter animation via the `vt-micro`
+ * class (see aurora.css) so only the named elements morph.
  */
-export function withViewTransition(update: () => void): void {
+export function withViewTransition(update: () => void, opts?: { micro?: boolean }): void {
   const doc = document as VTDocument;
   if (prefersReducedMotion() || typeof doc.startViewTransition !== "function") {
     update();
     return;
   }
-  doc.startViewTransition(() => {
+  const micro = opts?.micro === true;
+  if (micro) doc.documentElement.classList.add("vt-micro");
+  const handle = doc.startViewTransition(() => {
     flushSync(update);
   });
+  if (micro) {
+    const clear = () => doc.documentElement.classList.remove("vt-micro");
+    if (handle?.finished) handle.finished.then(clear, clear);
+    else clear();
+  }
 }

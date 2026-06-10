@@ -469,7 +469,7 @@ export default function App() {
               question={detailQ}
               state={progress.state}
               track={track}
-              onBack={() => setActiveQuestionId(null)}
+              onBack={() => withViewTransition(() => setActiveQuestionId(null))}
               onPracticeOne={() => {
                 setSessionFilter({ topic: "all", queue: "all" });
                 setActiveQuestionId(null);
@@ -494,7 +494,7 @@ export default function App() {
                 <MobileLibraryV2
                   questions={activeQuestions}
                   state={progress.state}
-                  onOpenQuestion={(id) => setActiveQuestionId(id)}
+                  onOpenQuestion={(id) => withViewTransition(() => setActiveQuestionId(id))}
                   onStartSession={(f) => {
                     setSessionFilter(f);
                     goView("flashcards");

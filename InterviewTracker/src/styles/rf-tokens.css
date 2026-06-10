@@ -1,36 +1,41 @@
 /* ============================================================
    RF design tokens — "Range" mobile-first redesign.
    Used by every component under src/components/_rf/.
-   Coexists with legacy --accent/--bg-* tokens (which remain
-   in use by desktop components).
+
+   v3 (Phase 3): colour tokens are now a SEMANTIC BRIDGE onto the
+   core theme tokens (tokens.css) instead of a second hardcoded
+   palette. One source of truth — the mobile UI now follows all
+   four themes (midnight/aurora/sunset/mint) and the pentest track
+   accent, which it previously ignored. Layout/type/motion tokens
+   below remain RF-specific by design.
    ============================================================ */
 
 :root {
-  /* ---- Surfaces ---- */
-  --rf-bg:           #0A0A0B;          /* true near-black */
-  --rf-bg-elev:      #111114;          /* subtle elevated */
-  --rf-bg-press:     #1A1A1F;          /* pressed state */
+  /* ---- Surfaces (bridged) ---- */
+  --rf-bg:           var(--bg-0);
+  --rf-bg-elev:      var(--bg-2);
+  --rf-bg-press:     var(--bg-3);
 
-  --rf-ink:          #F5F5F7;          /* primary ink */
-  --rf-ink-2:        #8A8A93;          /* secondary */
-  --rf-ink-3:        #5A5A63;          /* tertiary / disabled */
+  --rf-ink:          var(--text);
+  --rf-ink-2:        var(--text-2);
+  --rf-ink-3:        var(--text-3);
   --rf-ink-on-accent:#FFFFFF;
 
-  --rf-border-subtle: rgba(255, 255, 255, 0.06);
-  --rf-border:        rgba(255, 255, 255, 0.10);
-  --rf-border-strong: rgba(255, 255, 255, 0.18);
+  --rf-border-subtle: var(--border);
+  --rf-border:        var(--border);
+  --rf-border-strong: var(--border-hi);
 
-  /* ---- Accent (single hue, surgical use) ---- */
-  --rf-accent:       #8B7CFF;          /* CTA, live ring, active tab */
-  --rf-accent-press: #7665E8;
-  --rf-accent-soft:  rgba(139, 124, 255, 0.16);
+  /* ---- Accent (bridged; follows theme + track) ---- */
+  --rf-accent:       var(--accent);
+  --rf-accent-press: color-mix(in srgb, var(--accent) 85%, black);
+  --rf-accent-soft:  color-mix(in srgb, var(--accent) 16%, transparent);
 
-  /* ---- State colors for the segmented progress strip ---- */
-  --rf-state-mastered: #5EF0A3;
-  --rf-state-started:  #FFD166;
-  --rf-state-unseen:   rgba(255, 255, 255, 0.06);
+  /* ---- State colors for the segmented progress strip (bridged) ---- */
+  --rf-state-mastered: var(--green);
+  --rf-state-started:  var(--yellow);
+  --rf-state-unseen:   var(--border);
 
-  /* ---- Streak gradient (neutral → ember → white-hot) ---- */
+  /* ---- Streak gradient (brand personality — intentionally fixed) ---- */
   --rf-streak-cold:  #3A3A42;
   --rf-streak-warm:  #FF7A3D;
   --rf-streak-hot:   #FFD080;
